@@ -6,9 +6,9 @@ use sdl2::rect::Rect;
 use sdl2::gfx::primitives::DrawRenderer;
 use std::time::Duration;
 
-const WINDOW_WIDTH: u32 = 800;
-const WINDOW_HEIGHT: u32 = 600;
-const LANE_WIDTH: u32 = 40;
+const WINDOW_WIDTH: u32 = 1920;
+const WINDOW_HEIGHT: u32 = 1080;
+const LANE_WIDTH: u32 = 80;
 const ROAD_WIDTH: u32 = LANE_WIDTH * 3;
 const INTERSECTION_SIZE: u32 = ROAD_WIDTH * 2;
 const ARROW_SIZE: i16 = 20;
@@ -43,7 +43,7 @@ fn main() -> Result<(), String> {
     let sdl_context = sdl2::init()?;
     let video_subsystem = sdl_context.video()?;
 
-    let window = video_subsystem.window("Traffic World", WINDOW_WIDTH, WINDOW_HEIGHT)
+    let window = video_subsystem.window("Smart Fucking Road", WINDOW_WIDTH, WINDOW_HEIGHT)
         .position_centered()
         .build()
         .map_err(|e| e.to_string())?;
@@ -53,9 +53,9 @@ fn main() -> Result<(), String> {
 
     let roads = [
         Road { direction: Direction::North, x: (WINDOW_WIDTH / 2 - ROAD_WIDTH) as i32, y: 0, width: ROAD_WIDTH, height: WINDOW_HEIGHT / 2 - INTERSECTION_SIZE / 2 },
-        Road { direction: Direction::South, x: (WINDOW_WIDTH / 2) as i32, y: (WINDOW_HEIGHT / 2 + INTERSECTION_SIZE / 2) as i32, width: ROAD_WIDTH, height: WINDOW_HEIGHT / 2 - INTERSECTION_SIZE / 2 },
+        Road { direction: Direction::South, x: (WINDOW_WIDTH / 2 - ROAD_WIDTH) as i32, y: (WINDOW_HEIGHT / 2 + INTERSECTION_SIZE / 2) as i32, width: ROAD_WIDTH, height: WINDOW_HEIGHT / 2 - INTERSECTION_SIZE / 2 },
         Road { direction: Direction::East, x: (WINDOW_WIDTH / 2 + INTERSECTION_SIZE / 2) as i32, y: (WINDOW_HEIGHT / 2 - ROAD_WIDTH) as i32, width: WINDOW_WIDTH / 2 - INTERSECTION_SIZE / 2, height: ROAD_WIDTH },
-        Road { direction: Direction::West, x: 0, y: (WINDOW_HEIGHT / 2) as i32, width: WINDOW_WIDTH / 2 - INTERSECTION_SIZE / 2, height: ROAD_WIDTH },
+        Road { direction: Direction::West, x: 0, y: (WINDOW_HEIGHT / 2 - ROAD_WIDTH) as i32, width: WINDOW_WIDTH / 2 - INTERSECTION_SIZE / 2, height: ROAD_WIDTH },
     ];
 
     'running: loop {
@@ -69,7 +69,7 @@ fn main() -> Result<(), String> {
             }
         }
 
-        canvas.set_draw_color(Color::RGB(0, 100, 0));
+        canvas.set_draw_color(Color::RGB(50, 50, 50));
         canvas.clear();
 
         draw_intersection(&mut canvas);
@@ -92,7 +92,7 @@ fn draw_road(canvas: &mut sdl2::render::Canvas<sdl2::video::Window>, road: &Road
 
     // Draw lane markings
     let is_vertical = matches!(road.direction, Direction::North | Direction::South);
-    for i in 1..6 {
+    for i in 0..7 {
         let line_pos = if is_vertical {
             road.x + (i * LANE_WIDTH as i32)
         } else {
@@ -148,30 +148,30 @@ fn draw_intersection(canvas: &mut sdl2::render::Canvas<sdl2::video::Window>) {
 
 fn draw_arrow(canvas: &mut sdl2::render::Canvas<sdl2::video::Window>, x: i32, y: i32, direction: &Direction, turn: &Turn) {
     let (dx, dy) = match (direction, turn) {
-        (Direction::North, Turn::UTurn) => (-ARROW_SIZE * 2, 0),
-        (Direction::North, Turn::Left) => (-ARROW_SIZE * 2, -ARROW_SIZE * 2),
-        (Direction::North, Turn::SlightLeft) => (-ARROW_SIZE, -ARROW_SIZE * 2),
-        (Direction::North, Turn::Straight) => (0, -ARROW_SIZE * 2),
-        (Direction::North, Turn::SlightRight) => (ARROW_SIZE, -ARROW_SIZE * 2),
-        (Direction::North, Turn::Right) => (ARROW_SIZE * 2, -ARROW_SIZE * 2),
-        (Direction::South, Turn::UTurn) => (ARROW_SIZE * 2, 0),
-        (Direction::South, Turn::Left) => (ARROW_SIZE * 2, ARROW_SIZE * 2),
-        (Direction::South, Turn::SlightLeft) => (ARROW_SIZE, ARROW_SIZE * 2),
-        (Direction::South, Turn::Straight) => (0, ARROW_SIZE * 2),
-        (Direction::South, Turn::SlightRight) => (-ARROW_SIZE, ARROW_SIZE * 2),
-        (Direction::South, Turn::Right) => (-ARROW_SIZE * 2, ARROW_SIZE * 2),
-        (Direction::East, Turn::UTurn) => (0, -ARROW_SIZE * 2),
-        (Direction::East, Turn::Left) => (ARROW_SIZE * 2, -ARROW_SIZE * 2),
-        (Direction::East, Turn::SlightLeft) => (ARROW_SIZE * 2, -ARROW_SIZE),
-        (Direction::East, Turn::Straight) => (ARROW_SIZE * 2, 0),
-        (Direction::East, Turn::SlightRight) => (ARROW_SIZE * 2, ARROW_SIZE),
-        (Direction::East, Turn::Right) => (ARROW_SIZE * 2, ARROW_SIZE * 2),
-        (Direction::West, Turn::UTurn) => (0, ARROW_SIZE * 2),
-        (Direction::West, Turn::Left) => (-ARROW_SIZE * 2, ARROW_SIZE * 2),
-        (Direction::West, Turn::SlightLeft) => (-ARROW_SIZE * 2, ARROW_SIZE),
-        (Direction::West, Turn::Straight) => (-ARROW_SIZE * 2, 0),
-        (Direction::West, Turn::SlightRight) => (-ARROW_SIZE * 2, -ARROW_SIZE),
-        (Direction::West, Turn::Right) => (-ARROW_SIZE * 2, -ARROW_SIZE * 2),
+        (Direction::North, Turn::UTurn) => (-ARROW_SIZE, ARROW_SIZE),
+        (Direction::North, Turn::Left) => (-ARROW_SIZE, -ARROW_SIZE),
+        (Direction::North, Turn::SlightLeft) => (-ARROW_SIZE/2, -ARROW_SIZE),
+        (Direction::North, Turn::Straight) => (0, -ARROW_SIZE),
+        (Direction::North, Turn::SlightRight) => (ARROW_SIZE/2, -ARROW_SIZE),
+        (Direction::North, Turn::Right) => (ARROW_SIZE, -ARROW_SIZE),
+        (Direction::South, Turn::UTurn) => (ARROW_SIZE, -ARROW_SIZE),
+        (Direction::South, Turn::Left) => (ARROW_SIZE, ARROW_SIZE),
+        (Direction::South, Turn::SlightLeft) => (ARROW_SIZE/2, ARROW_SIZE),
+        (Direction::South, Turn::Straight) => (0, ARROW_SIZE),
+        (Direction::South, Turn::SlightRight) => (-ARROW_SIZE/2, ARROW_SIZE),
+        (Direction::South, Turn::Right) => (-ARROW_SIZE, ARROW_SIZE),
+        (Direction::East, Turn::UTurn) => (-ARROW_SIZE, -ARROW_SIZE),
+        (Direction::East, Turn::Left) => (ARROW_SIZE, -ARROW_SIZE),
+        (Direction::East, Turn::SlightLeft) => (ARROW_SIZE, -ARROW_SIZE/2),
+        (Direction::East, Turn::Straight) => (ARROW_SIZE, 0),
+        (Direction::East, Turn::SlightRight) => (ARROW_SIZE, ARROW_SIZE/2),
+        (Direction::East, Turn::Right) => (ARROW_SIZE, ARROW_SIZE),
+        (Direction::West, Turn::UTurn) => (ARROW_SIZE, ARROW_SIZE),
+        (Direction::West, Turn::Left) => (-ARROW_SIZE, ARROW_SIZE),
+        (Direction::West, Turn::SlightLeft) => (-ARROW_SIZE, ARROW_SIZE/2),
+        (Direction::West, Turn::Straight) => (-ARROW_SIZE, 0),
+        (Direction::West, Turn::SlightRight) => (-ARROW_SIZE, -ARROW_SIZE/2),
+        (Direction::West, Turn::Right) => (-ARROW_SIZE, -ARROW_SIZE),
     };
 
     let (x1, y1) = (x as i16, y as i16);
