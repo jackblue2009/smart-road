@@ -142,26 +142,34 @@ impl World {
 
     pub fn handle_key_event(&mut self, keycode: Keycode) {
         // Prevent vehicle spam by checking time since last spawn
+        // if Instant::now().duration_since(self.last_vehicle_spawn_time) < self.vehicle_spawn_cooldown
+        // {
+        //     return;
+        // }
+
+        // // Prevent exceeding max vehicle limit
+        // if self.vehicles.len() >= self.max_vehicles {
+        //     return;
+        // }
+
+        let mut rng = rand::thread_rng();
+        // let route = rng.gen_range(0..3);
+        // // let route = (self.vehicles.len() % 3) as u8;
+        // let lane_width = ROAD_WIDTH / 6;
         if Instant::now().duration_since(self.last_vehicle_spawn_time) < self.vehicle_spawn_cooldown
+            || self.vehicles.len() >= self.max_vehicles
         {
             return;
         }
 
-        // Prevent exceeding max vehicle limit
-        if self.vehicles.len() >= self.max_vehicles {
-            return;
-        }
-
-        let mut rng = rand::thread_rng();
-        let route = rng.gen_range(0..3);
-        // let route = (self.vehicles.len() % 3) as u8;
         let lane_width = ROAD_WIDTH / 6;
+        let route = (self.vehicles.len() % 3) as u8;  // 0: right, 1: straight, 2: left
 
         // Define routing options for each direction
         let routing_options = [
             // Up arrow (spawn from South, moving North)
             VehicleRouting {
-                spawn_x: 400 + ROAD_WIDTH as i32 / 2 - (lane_width as i32 * (route + 1) - lane_width as i32 / 2),
+                spawn_x: 400 + ROAD_WIDTH as i32 / 2 - (lane_width as i32 * (3-route as i32) - lane_width as i32 / 2),
                 spawn_y: 600,
                 spawn_angle: -90.0,
                 spawn_direction: 0,
@@ -169,7 +177,7 @@ impl World {
             },
             // Down arrow (spawn from North, moving South)
             VehicleRouting {
-                spawn_x: 400 - ROAD_WIDTH as i32 / 2 + (lane_width as i32 * route + lane_width as i32 / 2),
+                spawn_x: 400 - ROAD_WIDTH as i32 / 2 + (lane_width as i32 * route as i32 + lane_width as i32 / 2),
                 spawn_y: 0,
                 spawn_angle: 90.0,
                 spawn_direction: 1,
@@ -178,7 +186,7 @@ impl World {
             // Left arrow (spawn from East, moving West)
             VehicleRouting {
                 spawn_x: 800,
-                spawn_y: 300 - ROAD_WIDTH as i32 / 2 + (lane_width as i32 * route + lane_width as i32 / 2),
+                spawn_y: 300 - ROAD_WIDTH as i32 / 2 + (lane_width as i32 * route as i32 + lane_width as i32 / 2),
                 spawn_angle: 180.0,
                 spawn_direction: 2,
                 allowed_routes: &[0, 1, 2],
@@ -186,11 +194,43 @@ impl World {
             // Right arrow (spawn from West, moving East)
             VehicleRouting {
                 spawn_x: 0,
-                spawn_y: 300 + ROAD_WIDTH as i32 / 2 - (lane_width as i32 * (route + 1) - lane_width as i32 / 2),
+                spawn_y: 300 + ROAD_WIDTH as i32 / 2 - (lane_width as i32 * (3-route as i32) - lane_width as i32 / 2),
                 spawn_angle: 0.0,
                 spawn_direction: 3,
                 allowed_routes: &[0, 1, 2],
             },
+            // // Up arrow (spawn from South, moving North)
+            // VehicleRouting {
+            //     spawn_x: 400 + ROAD_WIDTH as i32 / 2 - (lane_width as i32 * (route + 1) - lane_width as i32 / 2),
+            //     spawn_y: 600,
+            //     spawn_angle: -90.0,
+            //     spawn_direction: 0,
+            //     allowed_routes: &[0, 1, 2],
+            // },
+            // // Down arrow (spawn from North, moving South)
+            // VehicleRouting {
+            //     spawn_x: 400 - ROAD_WIDTH as i32 / 2 + (lane_width as i32 * route + lane_width as i32 / 2),
+            //     spawn_y: 0,
+            //     spawn_angle: 90.0,
+            //     spawn_direction: 1,
+            //     allowed_routes: &[0, 1, 2],
+            // },
+            // // Left arrow (spawn from East, moving West)
+            // VehicleRouting {
+            //     spawn_x: 800,
+            //     spawn_y: 300 - ROAD_WIDTH as i32 / 2 + (lane_width as i32 * route + lane_width as i32 / 2),
+            //     spawn_angle: 180.0,
+            //     spawn_direction: 2,
+            //     allowed_routes: &[0, 1, 2],
+            // },
+            // // Right arrow (spawn from West, moving East)
+            // VehicleRouting {
+            //     spawn_x: 0,
+            //     spawn_y: 300 + ROAD_WIDTH as i32 / 2 - (lane_width as i32 * (route + 1) - lane_width as i32 / 2),
+            //     spawn_angle: 0.0,
+            //     spawn_direction: 3,
+            //     allowed_routes: &[0, 1, 2],
+            // },
 
             // // Up arrow (spawn from South, moving North)
             // VehicleRouting {
@@ -322,8 +362,8 @@ impl World {
             _ => unreachable!(),
         };
 
-        //let route = rand::thread_rng().gen_range(0..3);
-        let route = 1;
+        let route = rand::thread_rng().gen_range(0..3);
+        //let route = 1;
         self.vehicles
             .push(Vehicle::new(x, y, angle, direction, route));
     }

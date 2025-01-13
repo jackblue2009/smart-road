@@ -63,12 +63,19 @@ impl Vehicle {
     }
 
     fn get_movement_vector(&self) -> (f64, f64) {
-        match self.direction {
-            0 => (0.0, -VEHICLE_SPEED), // North (up)
-            1 => (0.0, VEHICLE_SPEED),  // South (down)
-            2 => (-VEHICLE_SPEED, 0.0), // West (left)
-            3 => (VEHICLE_SPEED, 0.0),  // East (right)
-            _ => (0.0, 0.0),
+        if self.is_in_intersection() {
+            let rad = self.angle * PI / 180.0;
+            let dx = VEHICLE_SPEED * rad.cos();
+            let dy = VEHICLE_SPEED * rad.sin();
+            return (dx, dy);
+        } else {
+            match self.direction {
+                0 => (0.0, -VEHICLE_SPEED), // North (up)
+                1 => (0.0, VEHICLE_SPEED),  // South (down)
+                2 => (-VEHICLE_SPEED, 0.0), // West (left)
+                3 => (VEHICLE_SPEED, 0.0),  // East (right)
+                _ => (0.0, 0.0),
+            }
         }
     }
 
@@ -160,78 +167,103 @@ impl Vehicle {
         let turn_speed = 2.0;
 
         match self.direction {
-            0 => {
-                match self.route {
-                    0 => (), // Straight: maintain -90 degrees
-                    1 => {
-                        // Right turn to East: -90 to 0 degrees
-                        if self.angle < 0.0 {
-                            self.angle += turn_speed;
-                        }
-                    }
-                    2 => {
-                        // Left turn to West: -90 to 180 degrees
-                        if self.angle > -180.0 {
-                            self.angle -= turn_speed;
-                        }
-                    }
-                    _ => unreachable!(),
+            // 0 => {
+            //     match self.route {
+            //         0 => (), // Straight: maintain -90 degrees
+            //         1 => {
+            //             // Right turn to East: -90 to 0 degrees
+            //             if self.angle < 0.0 {
+            //                 self.angle += turn_speed;
+            //             }
+            //         }
+            //         2 => {
+            //             // Left turn to West: -90 to 180 degrees
+            //             if self.angle > -180.0 {
+            //                 self.angle -= turn_speed;
+            //             }
+            //         }
+            //         _ => unreachable!(),
+            //     }
+            // } // North
+            // 1 => {
+            //     match self.route {
+            //         0 => (), // Straight: maintain 90 degrees
+            //         1 => {
+            //             // Right turn to West: 90 to 180 degrees
+            //             if self.angle < 180.0 {
+            //                 self.angle += turn_speed;
+            //             }
+            //         }
+            //         2 => {
+            //             // Left turn to East: 90 to 0 degrees
+            //             if self.angle > 0.0 {
+            //                 self.angle -= turn_speed;
+            //             }
+            //         }
+            //         _ => unreachable!(),
+            //     }
+            // } // South
+            // 2 => {
+            //     match self.route {
+            //         0 => (), // Straight: maintain 180 degrees
+            //         1 => {
+            //             // Right turn to North: 180 to -90 degrees
+            //             if self.angle > -90.0 {
+            //                 self.angle -= turn_speed;
+            //             }
+            //         }
+            //         2 => {
+            //             // Left turn to South: 180 to 90 degrees
+            //             if self.angle > 90.0 {
+            //                 self.angle -= turn_speed;
+            //             }
+            //         }
+            //         _ => unreachable!(),
+            //     }
+            // } // East
+            // 3 => {
+            //     match self.route {
+            //         0 => (), // Straight: maintain 0 degrees
+            //         1 => {
+            //             // Right turn to South: 0 to 90 degrees
+            //             if self.angle < 90.0 {
+            //                 self.angle += turn_speed;
+            //             }
+            //         }
+            //         2 => {
+            //             // Left turn to North: 0 to -90 degrees
+            //             if self.angle > -90.0 {
+            //                 self.angle -= turn_speed;
+            //             }
+            //         }
+            //         _ => unreachable!(),
+            //     }
+            // } // West
+            // _ => (),
+            0 => { // Moving North
+                // Left turn to West
+                if self.angle > -180.0 {
+                    self.angle -= turn_speed;
                 }
-            } // North
-            1 => {
-                match self.route {
-                    0 => (), // Straight: maintain 90 degrees
-                    1 => {
-                        // Right turn to West: 90 to 180 degrees
-                        if self.angle < 180.0 {
-                            self.angle += turn_speed;
-                        }
-                    }
-                    2 => {
-                        // Left turn to East: 90 to 0 degrees
-                        if self.angle > 0.0 {
-                            self.angle -= turn_speed;
-                        }
-                    }
-                    _ => unreachable!(),
+            }
+            1 => { // Moving South
+                // Left turn to East
+                if self.angle > 0.0 {
+                    self.angle -= turn_speed;
                 }
-            } // South
-            2 => {
-                match self.route {
-                    0 => (), // Straight: maintain 180 degrees
-                    1 => {
-                        // Right turn to North: 180 to -90 degrees
-                        if self.angle > -90.0 {
-                            self.angle -= turn_speed;
-                        }
-                    }
-                    2 => {
-                        // Left turn to South: 180 to 90 degrees
-                        if self.angle > 90.0 {
-                            self.angle -= turn_speed;
-                        }
-                    }
-                    _ => unreachable!(),
+            }
+            2 => { // Moving West
+                // Left turn to South
+                if self.angle < 90.0 {
+                    self.angle += turn_speed;
                 }
-            } // East
-            3 => {
-                match self.route {
-                    0 => (), // Straight: maintain 0 degrees
-                    1 => {
-                        // Right turn to South: 0 to 90 degrees
-                        if self.angle < 90.0 {
-                            self.angle += turn_speed;
-                        }
-                    }
-                    2 => {
-                        // Left turn to North: 0 to -90 degrees
-                        if self.angle > -90.0 {
-                            self.angle -= turn_speed;
-                        }
-                    }
-                    _ => unreachable!(),
+            }
+            3 => { // Moving East
+                // Left turn to North
+                if self.angle > -90.0 {
+                    self.angle -= turn_speed;
                 }
-            } // West
+            }
             _ => (),
         }
 
