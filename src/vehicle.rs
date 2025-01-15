@@ -143,10 +143,37 @@ impl Vehicle {
     }
 
     fn is_in_intersection(&self) -> bool {
-        self.x > 400.0 - ROAD_WIDTH as f64 / 2.0
-            && self.x < 400.0 + ROAD_WIDTH as f64 / 2.0
-            && self.y > 300.0 - ROAD_WIDTH as f64 / 2.0
-            && self.y < 300.0 + ROAD_WIDTH as f64 / 2.0
+        // self.x > 400.0 - ROAD_WIDTH as f64 / 2.0
+        //     && self.x < 400.0 + ROAD_WIDTH as f64 / 2.0
+        //     && self.y > 300.0 - ROAD_WIDTH as f64 / 2.0
+        //     && self.y < 300.0 + ROAD_WIDTH as f64 / 2.0
+        // Each direction has 3 lanes, total of 6 lanes per road
+        // ROAD_WIDTH = 240 means each lane is 40 units wide (240/6)
+        
+        // Define intersection boundaries based on the full road width
+        let intersection_left = 400.0 - ROAD_WIDTH as f64;   // Left boundary (400 - 240)
+        let intersection_right = 400.0 + ROAD_WIDTH as f64;  // Right boundary (400 + 240)
+        let intersection_top = 300.0 - ROAD_WIDTH as f64;    // Top boundary (300 - 240)
+        let intersection_bottom = 300.0 + ROAD_WIDTH as f64; // Bottom boundary (300 + 240)
+
+        // Check if vehicle is within the intersection boundaries
+        self.x > intersection_left 
+            && self.x < intersection_right
+            && self.y > intersection_top 
+            && self.y < intersection_bottom
+    }
+
+    fn is_approaching_intersection(&self) -> bool {
+        let lane_width = ROAD_WIDTH as f64 / 6.0; // Each lane is 40 units wide
+        let approach_distance = lane_width * 2.0;  // Two lane widths of approach distance
+        
+        match self.direction {
+            0 => self.y > 300.0 + ROAD_WIDTH as f64 && self.y < 300.0 + ROAD_WIDTH as f64 + approach_distance, // Northbound
+            1 => self.y < 300.0 - ROAD_WIDTH as f64 && self.y > 300.0 - ROAD_WIDTH as f64 - approach_distance, // Southbound
+            2 => self.x > 400.0 + ROAD_WIDTH as f64 && self.x < 400.0 + ROAD_WIDTH as f64 + approach_distance, // Westbound
+            3 => self.x < 400.0 - ROAD_WIDTH as f64 && self.x > 400.0 - ROAD_WIDTH as f64 - approach_distance, // Eastbound
+            _ => false,
+        }
     }
 
     fn update_angle(&mut self) {
