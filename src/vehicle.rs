@@ -128,28 +128,23 @@ impl Vehicle {
             let mut dx = VEHICLE_SPEED * rad.cos();
             let mut dy = VEHICLE_SPEED * rad.sin();
             
-            // Apply lane offset based on direction
+            // Apply lane offset only in intersection
             match self.direction {
-                0 => dx += lane_offset * 0.1, // North to East
-                1 => dx -= lane_offset * 0.1, // South to West
-                2 => dy -= lane_offset * 0.1, // West to North
-                3 => dy += lane_offset * 0.1, // East to South
+                0 => dx += lane_offset * 0.1,
+                1 => dx -= lane_offset * 0.1,
+                2 => dy -= lane_offset * 0.1,
+                3 => dy += lane_offset * 0.1,
                 _ => (),
             }
             
             (dx, dy)
         } else {
-            let lane_offset = match self.lane {
-                Lane::Right => -20.0,
-                Lane::Middle => 0.0,
-                Lane::Left => 20.0,
-            };
-    
+            // Simple directional movement when not in intersection
             match self.direction {
-                0 => (lane_offset, -VEHICLE_SPEED), // North
-                1 => (-lane_offset, VEHICLE_SPEED), // South
-                2 => (-VEHICLE_SPEED, -lane_offset), // West
-                3 => (VEHICLE_SPEED, lane_offset),  // East
+                0 => (0.0, -VEHICLE_SPEED), // North
+                1 => (0.0, VEHICLE_SPEED),  // South 
+                2 => (-VEHICLE_SPEED, 0.0), // West
+                3 => (VEHICLE_SPEED, 0.0),  // East
                 _ => (0.0, 0.0),
             }
         }

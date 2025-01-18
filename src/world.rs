@@ -166,7 +166,7 @@ impl World {
         let spawn_config = match keycode {
             // From North
             Keycode::Down => Some((
-                400 - ROAD_WIDTH as i32 / 2 + lane_width as i32 * 2,  // Align with lanes
+                420 - ROAD_WIDTH as i32 / 3 + lane_width as i32 * (self.vehicles.len() % 3) as i32,  // Align with lanes
                 0,
                 90.0,
                 1,
@@ -175,14 +175,14 @@ impl World {
             // From East
             Keycode::Left => Some((
                 800,
-                300 - ROAD_WIDTH as i32 / 2 + lane_width as i32 * 2,
+                300 - ROAD_WIDTH as i32 / 3 + lane_width as i32 * (self.vehicles.len() % 3) as i32,
                 180.0,
                 2,
             )),
             
             // From South
             Keycode::Up => Some((
-                400 + ROAD_WIDTH as i32 / 2 - lane_width as i32 * 2,
+                420 + lane_width as i32 * (self.vehicles.len() % 3) as i32,
                 600,
                 270.0,
                 0,
@@ -191,7 +191,7 @@ impl World {
             // From West
             Keycode::Right => Some((
                 0,
-                300 + ROAD_WIDTH as i32 / 2 - lane_width as i32 * 2,
+                300 + lane_width as i32 * (self.vehicles.len() % 3) as i32,
                 0.0,
                 3,
             )),
