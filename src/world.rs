@@ -9,6 +9,8 @@ use sdl2::video::Window;
 use std::f64::consts::PI;
 use std::time::{Duration, Instant};
 
+use crate::vehicle::Lane;
+
 // Define allowed routes for each spawn direction
 #[derive(Debug, Clone, Copy)]
 struct VehicleRouting {
@@ -40,7 +42,6 @@ impl World {
     }
 
     pub fn update(&mut self) {
-
         for i in 0..self.vehicles.len() {
             let (current, others) = self.vehicles.split_at_mut(i);
             if let Some((vehicle, rest)) = others.split_first_mut() {
@@ -141,216 +142,148 @@ impl World {
     }
 
     pub fn handle_key_event(&mut self, keycode: Keycode) {
-        // Prevent vehicle spam by checking time since last spawn
-        // if Instant::now().duration_since(self.last_vehicle_spawn_time) < self.vehicle_spawn_cooldown
-        // {
-        //     return;
-        // }
-
-        // // Prevent exceeding max vehicle limit
-        // if self.vehicles.len() >= self.max_vehicles {
-        //     return;
-        // }
-
         let mut rng = rand::thread_rng();
         // let route = rng.gen_range(0..3);
         // // let route = (self.vehicles.len() % 3) as u8;
         // let lane_width = ROAD_WIDTH / 6;
+        // if Instant::now().duration_since(self.last_vehicle_spawn_time) < self.vehicle_spawn_cooldown
+        //     || self.vehicles.len() >= self.max_vehicles
+        // {
+        //     return;
+        // }
+        // let lane_width = ROAD_WIDTH / 6;
+        // let route = (self.vehicles.len() % 3) as u8;  // 0: right, 1: straight, 2: left
+
         if Instant::now().duration_since(self.last_vehicle_spawn_time) < self.vehicle_spawn_cooldown
-            || self.vehicles.len() >= self.max_vehicles
+        || self.vehicles.len() >= self.max_vehicles
         {
             return;
         }
 
         let lane_width = ROAD_WIDTH / 6;
-        let route = (self.vehicles.len() % 3) as u8;  // 0: right, 1: straight, 2: left
 
-        // Define routing options for each direction
-        let routing_options = [
-            // Up arrow (spawn from South, moving North)
-            VehicleRouting {
-                spawn_x: 400 + ROAD_WIDTH as i32 / 2 - (lane_width as i32 * (3-route as i32) - lane_width as i32 / 2),
-                spawn_y: 600,
-                spawn_angle: -90.0,
-                spawn_direction: 0,
-                allowed_routes: &[0, 1, 2],
-            },
-            // Down arrow (spawn from North, moving South)
-            VehicleRouting {
-                spawn_x: 400 - ROAD_WIDTH as i32 / 2 + (lane_width as i32 * route as i32 + lane_width as i32 / 2),
-                spawn_y: 0,
-                spawn_angle: 90.0,
-                spawn_direction: 1,
-                allowed_routes: &[0, 1, 2],
-            },
-            // Left arrow (spawn from East, moving West)
-            VehicleRouting {
-                spawn_x: 800,
-                spawn_y: 300 - ROAD_WIDTH as i32 / 2 + (lane_width as i32 * route as i32 + lane_width as i32 / 2),
-                spawn_angle: 180.0,
-                spawn_direction: 2,
-                allowed_routes: &[0, 1, 2],
-            },
-            // Right arrow (spawn from West, moving East)
-            VehicleRouting {
-                spawn_x: 0,
-                spawn_y: 300 + ROAD_WIDTH as i32 / 2 - (lane_width as i32 * (3-route as i32) - lane_width as i32 / 2),
-                spawn_angle: 0.0,
-                spawn_direction: 3,
-                allowed_routes: &[0, 1, 2],
-            },
-            // // Up arrow (spawn from South, moving North)
-            // VehicleRouting {
-            //     spawn_x: 400 + ROAD_WIDTH as i32 / 2 - (lane_width as i32 * (route + 1) - lane_width as i32 / 2),
-            //     spawn_y: 600,
-            //     spawn_angle: -90.0,
-            //     spawn_direction: 0,
-            //     allowed_routes: &[0, 1, 2],
-            // },
-            // // Down arrow (spawn from North, moving South)
-            // VehicleRouting {
-            //     spawn_x: 400 - ROAD_WIDTH as i32 / 2 + (lane_width as i32 * route + lane_width as i32 / 2),
-            //     spawn_y: 0,
-            //     spawn_angle: 90.0,
-            //     spawn_direction: 1,
-            //     allowed_routes: &[0, 1, 2],
-            // },
-            // // Left arrow (spawn from East, moving West)
-            // VehicleRouting {
-            //     spawn_x: 800,
-            //     spawn_y: 300 - ROAD_WIDTH as i32 / 2 + (lane_width as i32 * route + lane_width as i32 / 2),
-            //     spawn_angle: 180.0,
-            //     spawn_direction: 2,
-            //     allowed_routes: &[0, 1, 2],
-            // },
-            // // Right arrow (spawn from West, moving East)
-            // VehicleRouting {
-            //     spawn_x: 0,
-            //     spawn_y: 300 + ROAD_WIDTH as i32 / 2 - (lane_width as i32 * (route + 1) - lane_width as i32 / 2),
-            //     spawn_angle: 0.0,
-            //     spawn_direction: 3,
-            //     allowed_routes: &[0, 1, 2],
-            // },
+        // Define spawn positions for each lane and direction
+        let spawn_config = match keycode {
+            // From North
+            Keycode::Down => Some((
+                400 - ROAD_WIDTH as i32 / 2 + lane_width as i32 * 2,  // Align with lanes
+                0,
+                90.0,
+                1,
+            )),
+            
+            // From East
+            Keycode::Left => Some((
+                800,
+                300 - ROAD_WIDTH as i32 / 2 + lane_width as i32 * 2,
+                180.0,
+                2,
+            )),
+            
+            // From South
+            Keycode::Up => Some((
+                400 + ROAD_WIDTH as i32 / 2 - lane_width as i32 * 2,
+                600,
+                270.0,
+                0,
+            )),
+            
+            // From West
+            Keycode::Right => Some((
+                0,
+                300 + ROAD_WIDTH as i32 / 2 - lane_width as i32 * 2,
+                0.0,
+                3,
+            )),
+            
+            _ => None,
+        };
 
-            // // Up arrow (spawn from South, moving North)
-            // VehicleRouting {
-            //     spawn_x: 400 + ROAD_WIDTH as i32 / 2 - (lane_width as i32 * (2-route as i32) - lane_width as i32 / 2),
-            //     spawn_y: 600,
-            //     spawn_angle: -90.0,
-            //     spawn_direction: 0,
-            //     allowed_routes: &[route],
-            // },
-            // // Down arrow (spawn from North, moving South)
-            // VehicleRouting {
-            //     spawn_x: 400 - ROAD_WIDTH as i32 / 2 + (lane_width as i32 * route as i32 + lane_width as i32 / 2),
-            //     spawn_y: 0,
-            //     spawn_angle: 90.0,
-            //     spawn_direction: 1,
-            //     allowed_routes: &[route],
-            // },
-            // // Left arrow (spawn from East, moving West) 
-            // VehicleRouting {
-            //     spawn_x: 800,
-            //     spawn_y: 300 - ROAD_WIDTH as i32 / 2 + (lane_width as i32 * route as i32 + lane_width as i32 / 2),
-            //     spawn_angle: 180.0,
-            //     spawn_direction: 2,
-            //     allowed_routes: &[route],
-            // },
-            // // Right arrow (spawn from West, moving East)
-            // VehicleRouting {
-            //     spawn_x: 0,
-            //     spawn_y: 300 + ROAD_WIDTH as i32 / 2 - (lane_width as i32 * (2-route as i32) - lane_width as i32 / 2),
-            //     spawn_angle: 0.0,
-            //     spawn_direction: 3,
-            //     allowed_routes: &[route],
-            // },
-        ];
-
-        // Match keycode to appropriate routing
-        match keycode {
-            // Keycode::Up => {
-            //     let route = routing_options[0].allowed_routes
-            //         [rng.gen_range(0..routing_options[0].allowed_routes.len())];
-            //     self.vehicles.push(Vehicle::new(
-            //         routing_options[0].spawn_x,
-            //         routing_options[0].spawn_y,
-            //         routing_options[0].spawn_angle,
-            //         routing_options[0].spawn_direction,
-            //         route,
-            //     ));
-            //     self.last_vehicle_spawn_time = Instant::now();
-            // }
-            // Keycode::Down => {
-            //     let route = routing_options[1].allowed_routes
-            //         [rng.gen_range(0..routing_options[1].allowed_routes.len())];
-            //     self.vehicles.push(Vehicle::new(
-            //         routing_options[1].spawn_x,
-            //         routing_options[1].spawn_y,
-            //         routing_options[1].spawn_angle,
-            //         routing_options[1].spawn_direction,
-            //         route,
-            //     ));
-            //     self.last_vehicle_spawn_time = Instant::now();
-            // }
-            // Keycode::Left => {
-            //     let route = routing_options[2].allowed_routes
-            //         [rng.gen_range(0..routing_options[2].allowed_routes.len())];
-            //     self.vehicles.push(Vehicle::new(
-            //         routing_options[2].spawn_x,
-            //         routing_options[2].spawn_y,
-            //         routing_options[2].spawn_angle,
-            //         routing_options[2].spawn_direction,
-            //         route,
-            //     ));
-            //     self.last_vehicle_spawn_time = Instant::now();
-            // }
-            // Keycode::Right => {
-            //     let route = routing_options[3].allowed_routes
-            //         [rng.gen_range(0..routing_options[3].allowed_routes.len())];
-            //     self.vehicles.push(Vehicle::new(
-            //         routing_options[3].spawn_x,
-            //         routing_options[3].spawn_y,
-            //         routing_options[3].spawn_angle,
-            //         routing_options[3].spawn_direction,
-            //         route,
-            //     ));
-            //     self.last_vehicle_spawn_time = Instant::now();
-            // }
-            Keycode::Up | Keycode::Down | Keycode::Left | Keycode::Right => {
-                let direction_index = match keycode {
-                    Keycode::Up => 0,
-                    Keycode::Down => 1,
-                    Keycode::Left => 2,
-                    Keycode::Right => 3,
-                    _ => unreachable!()
-                };
-                // Cycle through lanes 0,1,2 (right, straight, left)
-                let route = (self.vehicles.len() % 3) as u8;
-                let routing = &routing_options[direction_index];
-                self.vehicles.push(Vehicle::new(
-                    routing.spawn_x,
-                    routing.spawn_y,
-                    routing.spawn_angle,
-                    routing.spawn_direction,
-                    route
-                ));
-                self.last_vehicle_spawn_time = Instant::now();
-            }
-            Keycode::R => {
-                // Random direction spawn
-                let routing = &routing_options[rng.gen_range(0..4)];
-                let route = routing.allowed_routes[rng.gen_range(0..routing.allowed_routes.len())];
-                self.vehicles.push(Vehicle::new(
-                    routing.spawn_x,
-                    routing.spawn_y,
-                    routing.spawn_angle,
-                    routing.spawn_direction,
-                    route,
-                ));
-                self.last_vehicle_spawn_time = Instant::now();
-            }
-            _ => {}
+        if let Some((x, y, angle, direction)) = spawn_config {
+            let lane = match self.vehicles.len() % 3 {
+                0 => Lane::Right,
+                1 => Lane::Middle,
+                2 => Lane::Left,
+                _ => unreachable!(),
+            };
+            
+            self.vehicles.push(Vehicle::new(x, y, angle, direction, lane));
+            self.last_vehicle_spawn_time = Instant::now();
         }
+
+        // // Define routing options for each direction
+        // let routing_options = [
+        //     // Up arrow (spawn from South, moving North)
+        //     VehicleRouting {
+        //         spawn_x: 400 + ROAD_WIDTH as i32 / 2 - (lane_width as i32 * (3-route as i32) - lane_width as i32 / 2),
+        //         spawn_y: 600,
+        //         spawn_angle: -90.0,
+        //         spawn_direction: 0,
+        //         allowed_routes: &[0, 1, 2],
+        //     },
+        //     // Down arrow (spawn from North, moving South)
+        //     VehicleRouting {
+        //         spawn_x: 400 - ROAD_WIDTH as i32 / 2 + (lane_width as i32 * route as i32 + lane_width as i32 / 2),
+        //         spawn_y: 0,
+        //         spawn_angle: 90.0,
+        //         spawn_direction: 1,
+        //         allowed_routes: &[0, 1, 2],
+        //     },
+        //     // Left arrow (spawn from East, moving West)
+        //     VehicleRouting {
+        //         spawn_x: 800,
+        //         spawn_y: 300 - ROAD_WIDTH as i32 / 2 + (lane_width as i32 * route as i32 + lane_width as i32 / 2),
+        //         spawn_angle: 180.0,
+        //         spawn_direction: 2,
+        //         allowed_routes: &[0, 1, 2],
+        //     },
+        //     // Right arrow (spawn from West, moving East)
+        //     VehicleRouting {
+        //         spawn_x: 0,
+        //         spawn_y: 300 + ROAD_WIDTH as i32 / 2 - (lane_width as i32 * (3-route as i32) - lane_width as i32 / 2),
+        //         spawn_angle: 0.0,
+        //         spawn_direction: 3,
+        //         allowed_routes: &[0, 1, 2],
+        //     },
+        // ];
+
+        // // Match keycode to appropriate routing
+        // match keycode {
+        //     Keycode::Up | Keycode::Down | Keycode::Left | Keycode::Right => {
+        //         let direction_index = match keycode {
+        //             Keycode::Up => 0,
+        //             Keycode::Down => 1,
+        //             Keycode::Left => 2,
+        //             Keycode::Right => 3,
+        //             _ => unreachable!()
+        //         };
+        //         // Cycle through lanes 0,1,2 (right, straight, left)
+        //         let route = (self.vehicles.len() % 3) as u8;
+        //         let routing = &routing_options[direction_index];
+        //         self.vehicles.push(Vehicle::new(
+        //             routing.spawn_x,
+        //             routing.spawn_y,
+        //             routing.spawn_angle,
+        //             routing.spawn_direction,
+        //             Lane::Middle
+        //         ));
+        //         self.last_vehicle_spawn_time = Instant::now();
+        //     }
+        //     Keycode::R => {
+        //         // Random direction spawn
+        //         let routing = &routing_options[rng.gen_range(0..4)];
+        //         let route = routing.allowed_routes[rng.gen_range(0..routing.allowed_routes.len())];
+        //         self.vehicles.push(Vehicle::new(
+        //             routing.spawn_x,
+        //             routing.spawn_y,
+        //             routing.spawn_angle,
+        //             routing.spawn_direction,
+        //             Lane::Middle
+        //         ));
+        //         self.last_vehicle_spawn_time = Instant::now();
+        //     }
+        //     _ => {}
+        // }
     }
 
     fn spawn_vehicle(&mut self, direction: u8) {
@@ -365,6 +298,6 @@ impl World {
         let route = rand::thread_rng().gen_range(0..3);
         //let route = 1;
         self.vehicles
-            .push(Vehicle::new(x, y, angle, direction, route));
+            .push(Vehicle::new(x, y, angle, direction, Lane::Middle));
     }
 }

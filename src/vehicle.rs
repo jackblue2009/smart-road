@@ -17,13 +17,22 @@ const INTERSECTION_CENTER_X: f64 = 400.0;
 #[allow(dead_code)]
 const INTERSECTION_CENTER_Y: f64 = 300.0;
 
+// Add this new enum at the top of the file
+#[derive(Clone, Copy)]
+pub enum Lane {
+    Right = 0,
+    Middle = 1,
+    Left = 2,
+}
+
 #[derive(Clone)]
 pub struct Vehicle {
     x: f64,
     y: f64,
     angle: f64,
     direction: u8,
-    route: u8,
+    // route: u8,
+    lane: Lane,
     color: sdl2::pixels::Color,
 }
 
@@ -36,18 +45,21 @@ impl Vehicle {
     /// * `y` - Initial y coordinate position  
     /// * `angle` - Starting angle in degrees
     /// * `direction` - Vehicle direction (0: North, 1: South, 2: West, 3: East)
-    /// * `route` - Route type (0: Straight, 1: Right turn, 2: Left turn)
+    /// * `lane` - Lane type (0: Straight, 1: Right turn, 2: Left turn)
     /// 
     /// # Returns
     /// New Vehicle instance with color based on route type:
     /// - Yellow for straight
     /// - Cyan for right turns
     /// - Purple for left turns
-    pub fn new(x: i32, y: i32, angle: f64, direction: u8, route: u8) -> Self {
-        let color = match route {
-            0 => sdl2::pixels::Color::RGB(255, 255, 0), // Straight: Yellow
-            1 => sdl2::pixels::Color::RGB(0, 255, 255), // Right: Cyan
-            2 => sdl2::pixels::Color::RGB(200, 150, 200), // Left: Purple
+    pub fn new(x: i32, y: i32, angle: f64, direction: u8, lane: Lane) -> Self {
+        let color = match lane {
+            // 0 => sdl2::pixels::Color::RGB(255, 255, 0), // Straight: Yellow
+            // 1 => sdl2::pixels::Color::RGB(0, 255, 255), // Right: Cyan
+            // 2 => sdl2::pixels::Color::RGB(200, 150, 200), // Left: Purple
+            Lane::Right => sdl2::pixels::Color::RGB(255, 255, 0),  // Yellow
+            Lane::Middle => sdl2::pixels::Color::RGB(0, 255, 255), // Cyan
+            Lane::Left => sdl2::pixels::Color::RGB(200, 150, 200), // Purple
             _ => unreachable!(),
         };
 
@@ -56,7 +68,8 @@ impl Vehicle {
             y: y as f64,
             angle,
             direction,
-            route,
+            // route,
+            lane,
             color,
         }
     }
@@ -90,17 +103,53 @@ impl Vehicle {
     /// - In intersection: Uses angle-based vector calculation
     /// - Outside intersection: Uses fixed directional movement
     fn get_movement_vector(&self) -> (f64, f64) {
+        // if self.is_in_intersection() {
+        //     let rad = self.angle * PI / 90.0;
+        //     let dx = VEHICLE_SPEED * rad.cos();
+        //     let dy = VEHICLE_SPEED * rad.sin();
+        //     return (dx, dy);
+        // } else {
+        //     match self.direction {
+        //         0 => (0.0, -VEHICLE_SPEED), // North (up)
+        //         1 => (0.0, VEHICLE_SPEED),  // South (down)
+        //         2 => (-VEHICLE_SPEED, 0.0), // West (left)
+        //         3 => (VEHICLE_SPEED, 0.0),  // East (right)
+        //         _ => (0.0, 0.0),
+        //     }
+        // }
         if self.is_in_intersection() {
             let rad = self.angle * PI / 180.0;
-            let dx = VEHICLE_SPEED * rad.cos();
-            let dy = VEHICLE_SPEED * rad.sin();
-            return (dx, dy);
-        } else {
+            let lane_offset = match self.lane {
+                Lane::Right => -20.0,
+                Lane::Middle => 0.0,
+                Lane::Left => 20.0,
+            };
+            
+            let mut dx = VEHICLE_SPEED * rad.cos();
+            let mut dy = VEHICLE_SPEED * rad.sin();
+            
+            // Apply lane offset based on direction
             match self.direction {
-                0 => (0.0, -VEHICLE_SPEED), // North (up)
-                1 => (0.0, VEHICLE_SPEED),  // South (down)
-                2 => (-VEHICLE_SPEED, 0.0), // West (left)
-                3 => (VEHICLE_SPEED, 0.0),  // East (right)
+                0 => dx += lane_offset * 0.1, // North to East
+                1 => dx -= lane_offset * 0.1, // South to West
+                2 => dy -= lane_offset * 0.1, // West to North
+                3 => dy += lane_offset * 0.1, // East to South
+                _ => (),
+            }
+            
+            (dx, dy)
+        } else {
+            let lane_offset = match self.lane {
+                Lane::Right => -20.0,
+                Lane::Middle => 0.0,
+                Lane::Left => 20.0,
+            };
+    
+            match self.direction {
+                0 => (lane_offset, -VEHICLE_SPEED), // North
+                1 => (-lane_offset, VEHICLE_SPEED), // South
+                2 => (-VEHICLE_SPEED, -lane_offset), // West
+                3 => (VEHICLE_SPEED, lane_offset),  // East
                 _ => (0.0, 0.0),
             }
         }
@@ -198,13 +247,25 @@ impl Vehicle {
     /// Boolean indicating if vehicle is inside the intersection area
     /// defined by ROAD_WIDTH around intersection center (400, 300)
     fn is_in_intersection(&self) -> bool {
-        // Define intersection boundaries based on the full road width
-        let intersection_left = 400.0 - ROAD_WIDTH as f64;   // Left boundary (400 - 240)
-        let intersection_right = 400.0 + ROAD_WIDTH as f64;  // Right boundary (400 + 240)
-        let intersection_top = 300.0 - ROAD_WIDTH as f64;    // Top boundary (300 - 240)
-        let intersection_bottom = 300.0 + ROAD_WIDTH as f64; // Bottom boundary (300 + 240)
+        // // Define intersection boundaries based on the full road width
+        // let intersection_left = 400.0 - (ROAD_WIDTH as f64 * 0.75);   // Left boundary (400 - 240)
+        // let intersection_right = 400.0 + (ROAD_WIDTH as f64 * 0.75);  // Right boundary (400 + 240)
+        // let intersection_top = 300.0 - (ROAD_WIDTH as f64 * 0.75);    // Top boundary (300 - 240)
+        // let intersection_bottom = 300.0 + (ROAD_WIDTH as f64 * 0.75); // Bottom boundary (300 + 240)
 
-        // Check if vehicle is within the intersection boundaries
+        // println!("Intersection boundaries Detected: Left: {}, Right: {}, Top: {}, Bottom: {}", intersection_left, intersection_right, intersection_top, intersection_bottom);
+
+        // // Check if vehicle is within the intersection boundaries
+        // self.x > intersection_left 
+        //     && self.x < intersection_right
+        //     && self.y > intersection_top 
+        //     && self.y < intersection_bottom
+        // Define intersection boundaries at road ends
+        let intersection_left = 400.0 - (ROAD_WIDTH as f64 * 0.5);   
+        let intersection_right = 400.0 + (ROAD_WIDTH as f64 * 0.5);  
+        let intersection_top = 300.0 - (ROAD_WIDTH as f64 * 0.5);    
+        let intersection_bottom = 300.0 + (ROAD_WIDTH as f64 * 0.5); 
+
         self.x > intersection_left 
             && self.x < intersection_right
             && self.y > intersection_top 
@@ -236,50 +297,143 @@ impl Vehicle {
     /// - Turn speed (2.0 degrees per update)
     /// - Normalizes final angle to -180 to 180 degree range
     fn update_angle(&mut self) {
+        // if !self.is_in_intersection() {
+        //     return;
+        // }
+        // println!(
+        //     "Vehicle at ({}, {}), Direction: {}, Route: {}, Current angle: {}",
+        //     self.x, self.y, self.direction, self.route, self.angle
+        // );
+        // let turn_speed = 2.0;
+        // let target_angle = match self.direction {
+        //     0 => -90.0, // North to West
+        //     1 => 90.0,  // South to East
+        //     2 => 90.0,  // West to South
+        //     3 => -90.0, // East to North
+        //     _ => 0.0,
+        // };
+
+        // // Calculate turn center points based on direction
+        // let (center_x, center_y) = match self.direction {
+        //     0 => (400.0 - ROAD_WIDTH as f64 / 4.0, 300.0 - ROAD_WIDTH as f64 / 4.0),
+        //     1 => (400.0 + ROAD_WIDTH as f64 / 4.0, 300.0 + ROAD_WIDTH as f64 / 4.0),
+        //     2 => (400.0 - ROAD_WIDTH as f64 / 4.0, 300.0 + ROAD_WIDTH as f64 / 4.0),
+        //     3 => (400.0 + ROAD_WIDTH as f64 / 4.0, 300.0 - ROAD_WIDTH as f64 / 4.0),
+        //     _ => (self.x, self.y),
+        // };
+
+        // // Calculate distance from turn center
+        // let dx = self.x - center_x;
+        // let dy = self.y - center_y;
+        // let distance = (dx * dx + dy * dy).sqrt();
+
+        // // Adjust angle based on position relative to turn center
+        // if distance > TURNING_RADIUS {
+        //     match self.direction {
+        //         0 => if self.angle > target_angle { self.angle -= turn_speed },
+        //         1 => if self.angle < target_angle { self.angle += turn_speed },
+        //         2 => if self.angle < target_angle { self.angle += turn_speed },
+        //         3 => if self.angle > target_angle { self.angle -= turn_speed },
+        //         _ => (),
+        //     }
+        // }
+
+        // // Fixed turning angles based on entry direction
+        // match self.direction {
+        //     0 => { // From North to East
+        //         if self.angle < 90.0 {
+        //             self.angle += turn_speed;
+        //         }
+        //     },
+        //     1 => { // From South to West
+        //         if self.angle > -90.0 {
+        //             self.angle -= turn_speed;
+        //         }
+        //     },
+        //     2 => { // From West to North
+        //         if self.angle > -90.0 {
+        //             self.angle -= turn_speed;
+        //         }
+        //     },
+        //     3 => { // From East to South
+        //         if self.angle < 90.0 {
+        //             self.angle += turn_speed;
+        //         }
+        //     },
+        //     _ => (),
+        // }
+
+        // match self.direction {
+        //     0 => { // Moving North
+        //         // Left turn to West
+        //         if self.angle > -90.0 {
+        //             self.angle -= turn_speed;
+        //         }
+        //     }
+        //     1 => { // Moving South
+        //         // Left turn to East
+        //         if self.angle > 0.0 {
+        //             self.angle -= turn_speed;
+        //         }
+        //     }
+        //     2 => { // Moving West
+        //         // Left turn to South
+        //         if self.angle < 90.0 {
+        //             self.angle += turn_speed;
+        //         }
+        //     }
+        //     3 => { // Moving East
+        //         // Left turn to North
+        //         if self.angle > -90.0 {
+        //             self.angle -= turn_speed;
+        //         }
+        //     }
+        //     _ => (),
+        // }
         if !self.is_in_intersection() {
             return;
         }
-
-        println!(
-            "Vehicle at ({}, {}), Direction: {}, Route: {}, Current angle: {}",
-            self.x, self.y, self.direction, self.route, self.angle
-        );
         let turn_speed = 2.0;
+        let target_angle = match (self.direction, self.lane) {
+            // From North (moving south)
+            (1, Lane::Right) => 0.0,    // Turn right to East
+            (1, Lane::Middle) => 90.0,  // Continue South
+            (1, Lane::Left) => 180.0,   // Turn left to West
+            
+            // From East (moving west)
+            (2, Lane::Right) => 90.0,   // Turn right to South
+            (2, Lane::Middle) => 180.0, // Continue West
+            (2, Lane::Left) => 270.0,   // Turn left to North
+            
+            // From South (moving north)
+            (0, Lane::Right) => 180.0,  // Turn right to West
+            (0, Lane::Middle) => 270.0, // Continue North
+            (0, Lane::Left) => 0.0,     // Turn left to East
+            
+            // From West (moving east)
+            (3, Lane::Right) => 270.0,  // Turn right to North
+            (3, Lane::Middle) => 0.0,   // Continue East
+            (3, Lane::Left) => 90.0,    // Turn left to South
+            
+            _ => self.angle,
+        };
 
-        match self.direction {
-            0 => { // Moving North
-                // Left turn to West
-                if self.angle > -180.0 {
-                    self.angle -= turn_speed;
-                }
+        // Smooth angle transition
+        let angle_diff = target_angle - self.angle;
+        if angle_diff.abs() > turn_speed {
+            if angle_diff > 0.0 {
+                self.angle += turn_speed;
+            } else {
+                self.angle -= turn_speed;
             }
-            1 => { // Moving South
-                // Left turn to East
-                if self.angle > 0.0 {
-                    self.angle -= turn_speed;
-                }
-            }
-            2 => { // Moving West
-                // Left turn to South
-                if self.angle < 90.0 {
-                    self.angle += turn_speed;
-                }
-            }
-            3 => { // Moving East
-                // Left turn to North
-                if self.angle > -90.0 {
-                    self.angle -= turn_speed;
-                }
-            }
-            _ => (),
         }
 
         // check to remove
         // Normalize angle to stay within -180 to 180 degrees
         self.angle = self.angle.rem_euclid(360.0);
-        if self.angle > 180.0 {
-            self.angle -= 360.0;
-        }
+        // if self.angle > 180.0 {
+        //     self.angle -= 360.0;
+        // }
     }
 
     /// Checks if vehicle has completed its journey
