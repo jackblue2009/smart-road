@@ -165,9 +165,9 @@ impl Vehicle {
         next_y: f64,
         vehicles: &[Vehicle],
     ) -> bool {
-        if self.is_collision(next_x, next_y, vehicles) {
-            return false;
-        }
+        // if self.is_collision(next_x, next_y, vehicles) {
+        //     return false;
+        // }
 
         true
     }
@@ -292,14 +292,14 @@ impl Vehicle {
     /// - Turn speed (2.0 degrees per update)
     /// - Normalizes final angle to -180 to 180 degree range
     fn update_angle(&mut self) {
-        // if !self.is_in_intersection() {
-        //     return;
-        // }
+        if !self.is_in_intersection() {
+            return;
+        }
         // println!(
         //     "Vehicle at ({}, {}), Direction: {}, Route: {}, Current angle: {}",
         //     self.x, self.y, self.direction, self.route, self.angle
         // );
-        // let turn_speed = 2.0;
+        let turn_speed = 2.0;
         // let target_angle = match self.direction {
         //     0 => -90.0, // North to West
         //     1 => 90.0,  // South to East
@@ -333,30 +333,30 @@ impl Vehicle {
         //     }
         // }
 
-        // // Fixed turning angles based on entry direction
-        // match self.direction {
-        //     0 => { // From North to East
-        //         if self.angle < 90.0 {
-        //             self.angle += turn_speed;
-        //         }
-        //     },
-        //     1 => { // From South to West
-        //         if self.angle > -90.0 {
-        //             self.angle -= turn_speed;
-        //         }
-        //     },
-        //     2 => { // From West to North
-        //         if self.angle > -90.0 {
-        //             self.angle -= turn_speed;
-        //         }
-        //     },
-        //     3 => { // From East to South
-        //         if self.angle < 90.0 {
-        //             self.angle += turn_speed;
-        //         }
-        //     },
-        //     _ => (),
-        // }
+        // Fixed turning angles based on entry direction
+        match self.direction {
+            0 => { // From North to East
+                if self.angle < 90.0 {
+                    self.angle += turn_speed;
+                }
+            },
+            1 => { // From South to West
+                if self.angle > -90.0 {
+                    self.angle -= turn_speed;
+                }
+            },
+            2 => { // From West to North
+                if self.angle > -90.0 {
+                    self.angle -= turn_speed;
+                }
+            },
+            3 => { // From East to South
+                if self.angle < 90.0 {
+                    self.angle += turn_speed;
+                }
+            },
+            _ => (),
+        }
 
         // match self.direction {
         //     0 => { // Moving North
@@ -385,30 +385,31 @@ impl Vehicle {
         //     }
         //     _ => (),
         // }
-        if !self.is_in_intersection() {
-            return;
-        }
-        let turn_speed = 2.0;
+
+        // if !self.is_in_intersection() {
+        //     return;
+        // }
+        // let turn_speed = 2.0;
         let target_angle = match (self.direction, self.lane) {
             // From North (moving south)
-            (1, Lane::Right) => 0.0,    // Turn right to East
-            (1, Lane::Middle) => 90.0,  // Continue South
-            (1, Lane::Left) => 180.0,   // Turn left to West
+            (1, Lane::Right) => 0.0,    // Right lane turns right (East)
+            (1, Lane::Middle) => 90.0,  // Middle lane goes straight (South)
+            (1, Lane::Left) => 180.0,   // Left lane turns left (West)
             
             // From East (moving west)
-            (2, Lane::Right) => 90.0,   // Turn right to South
-            (2, Lane::Middle) => 180.0, // Continue West
-            (2, Lane::Left) => 270.0,   // Turn left to North
+            (2, Lane::Right) => 90.0,   // Right lane turns right (South)
+            (2, Lane::Middle) => 180.0, // Middle lane goes straight (West)
+            (2, Lane::Left) => 270.0,   // Left lane turns left (North)
             
             // From South (moving north)
-            (0, Lane::Right) => 180.0,  // Turn right to West
-            (0, Lane::Middle) => 270.0, // Continue North
-            (0, Lane::Left) => 0.0,     // Turn left to East
+            (0, Lane::Right) => 180.0,  // Right lane turns right (West)
+            (0, Lane::Middle) => 270.0, // Middle lane goes straight (North)
+            (0, Lane::Left) => 0.0,     // Left lane turns left (East)
             
             // From West (moving east)
-            (3, Lane::Right) => 270.0,  // Turn right to North
-            (3, Lane::Middle) => 0.0,   // Continue East
-            (3, Lane::Left) => 90.0,    // Turn left to South
+            (3, Lane::Right) => 270.0,  // Right lane turns right (North)
+            (3, Lane::Middle) => 0.0,   // Middle lane goes straight (East)
+            (3, Lane::Left) => 90.0,    // Left lane turns left (South)
             
             _ => self.angle,
         };

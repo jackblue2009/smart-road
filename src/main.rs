@@ -39,7 +39,7 @@ fn main() -> Result<(), String> {
                     keycode: Some(keycode),
                     ..
                 } => {
-                    world.handle_key_event(keycode);
+                    //world.handle_key_event(keycode);
                 }
                 _ => {}
             }
@@ -48,6 +48,7 @@ fn main() -> Result<(), String> {
         canvas.set_draw_color(Color::RGB(0, 0, 0));
         canvas.clear();
 
+        world.auto_spawn();
         world.update();
         world.draw(&mut canvas)?;
 
