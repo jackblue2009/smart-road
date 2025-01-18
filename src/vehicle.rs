@@ -29,6 +29,20 @@ pub struct Vehicle {
 
 #[allow(unused_variables, dead_code)]
 impl Vehicle {
+    /// Creates a new vehicle instance with specified starting position, angle, direction and route
+    /// 
+    /// # Arguments
+    /// * `x` - Initial x coordinate position
+    /// * `y` - Initial y coordinate position  
+    /// * `angle` - Starting angle in degrees
+    /// * `direction` - Vehicle direction (0: North, 1: South, 2: West, 3: East)
+    /// * `route` - Route type (0: Straight, 1: Right turn, 2: Left turn)
+    /// 
+    /// # Returns
+    /// New Vehicle instance with color based on route type:
+    /// - Yellow for straight
+    /// - Cyan for right turns
+    /// - Purple for left turns
     pub fn new(x: i32, y: i32, angle: f64, direction: u8, route: u8) -> Self {
         let color = match route {
             0 => sdl2::pixels::Color::RGB(255, 255, 0), // Straight: Yellow
@@ -47,6 +61,13 @@ impl Vehicle {
         }
     }
 
+    /// Updates vehicle position based on current state and surrounding vehicles
+    /// 
+    /// # Arguments
+    /// * `vehicles` - Slice containing all vehicles for collision detection
+    /// 
+    /// Calculates next position, checks if movement is possible, and updates position/angle
+    /// if vehicle is in intersection
     pub fn update(&mut self, vehicles: &[Vehicle]) {
         let (dx, dy) = self.get_movement_vector();
         let next_x = self.x + dx;
@@ -62,6 +83,12 @@ impl Vehicle {
         }
     }
 
+    /// Calculates movement vector based on current direction and intersection status
+    /// 
+    /// # Returns
+    /// Tuple (dx, dy) representing movement delta:
+    /// - In intersection: Uses angle-based vector calculation
+    /// - Outside intersection: Uses fixed directional movement
     fn get_movement_vector(&self) -> (f64, f64) {
         if self.is_in_intersection() {
             let rad = self.angle * PI / 180.0;
@@ -79,17 +106,21 @@ impl Vehicle {
         }
     }
 
+    /// Determines if vehicle can safely move to next position
+    /// 
+    /// # Arguments
+    /// * `next_x` - Proposed next x coordinate
+    /// * `next_y` - Proposed next y coordinate
+    /// * `vehicles` - Slice of all vehicles for collision checking
+    /// 
+    /// # Returns
+    /// Boolean indicating if movement is safe
     fn can_move(
         &self,
         next_x: f64,
         next_y: f64,
         vehicles: &[Vehicle],
     ) -> bool {
-        //println!("Checking movement to position: ({}, {})", next_x, next_y);
-        // if self.is_collision(next_x, next_y, vehicles) {
-        //     println!("Movement blocked by collision");
-        //     return false;
-        // }
         if self.is_collision(next_x, next_y, vehicles) {
             return false;
         }
@@ -97,6 +128,17 @@ impl Vehicle {
         true
     }
 
+    /// Checks for potential collisions with other vehicles
+    /// 
+    /// # Arguments
+    /// * `next_x` - Proposed next x coordinate
+    /// * `next_y` - Proposed next y coordinate
+    /// * `vehicles` - Slice of all vehicles
+    /// 
+    /// # Returns
+    /// Boolean indicating if collision would occur:
+    /// - Considers safety distance for vehicles ahead
+    /// - Checks stopping distance for all nearby vehicles
     fn is_collision(&self, next_x: f64, next_y: f64, vehicles: &[Vehicle]) -> bool {
         for other in vehicles {
             if std::ptr::eq(self, other) {
@@ -131,6 +173,14 @@ impl Vehicle {
         false
     }
 
+    /// Determines if vehicle is in traffic light zone
+    /// 
+    /// # Arguments
+    /// * `x` - Current x coordinate
+    /// * `y` - Current y coordinate
+    /// 
+    /// # Returns
+    /// Boolean indicating if vehicle is in traffic light decision zone
     fn is_at_traffic_light(&self, x: f64, y: f64) -> bool {
         let light_zone = ROAD_WIDTH as f64 / 2.0;
         match self.direction {
@@ -142,14 +192,12 @@ impl Vehicle {
         }
     }
 
+    /// Checks if vehicle is within intersection boundaries
+    /// 
+    /// # Returns
+    /// Boolean indicating if vehicle is inside the intersection area
+    /// defined by ROAD_WIDTH around intersection center (400, 300)
     fn is_in_intersection(&self) -> bool {
-        // self.x > 400.0 - ROAD_WIDTH as f64 / 2.0
-        //     && self.x < 400.0 + ROAD_WIDTH as f64 / 2.0
-        //     && self.y > 300.0 - ROAD_WIDTH as f64 / 2.0
-        //     && self.y < 300.0 + ROAD_WIDTH as f64 / 2.0
-        // Each direction has 3 lanes, total of 6 lanes per road
-        // ROAD_WIDTH = 240 means each lane is 40 units wide (240/6)
-        
         // Define intersection boundaries based on the full road width
         let intersection_left = 400.0 - ROAD_WIDTH as f64;   // Left boundary (400 - 240)
         let intersection_right = 400.0 + ROAD_WIDTH as f64;  // Right boundary (400 + 240)
@@ -163,6 +211,11 @@ impl Vehicle {
             && self.y < intersection_bottom
     }
 
+    /// Determines if vehicle is approaching intersection
+    /// 
+    /// # Returns
+    /// Boolean indicating if vehicle is within approach zone
+    /// (2 lane widths before intersection)
     fn is_approaching_intersection(&self) -> bool {
         let lane_width = ROAD_WIDTH as f64 / 6.0; // Each lane is 40 units wide
         let approach_distance = lane_width * 2.0;  // Two lane widths of approach distance
@@ -176,13 +229,13 @@ impl Vehicle {
         }
     }
 
+    /// Updates vehicle angle for turning movements in intersection
+    /// 
+    /// Modifies vehicle angle based on:
+    /// - Current direction
+    /// - Turn speed (2.0 degrees per update)
+    /// - Normalizes final angle to -180 to 180 degree range
     fn update_angle(&mut self) {
-        // if self.route == 1 { // Right turn
-        //     self.angle += 2.0;  // Faster turn rate
-        // } else if self.route == 2 { // Left turn
-        //     self.angle -= 2.0;  // Faster turn rate
-        // }
-        // self.angle = self.angle.rem_euclid(360.0);
         if !self.is_in_intersection() {
             return;
         }
@@ -194,79 +247,6 @@ impl Vehicle {
         let turn_speed = 2.0;
 
         match self.direction {
-            // 0 => {
-            //     match self.route {
-            //         0 => (), // Straight: maintain -90 degrees
-            //         1 => {
-            //             // Right turn to East: -90 to 0 degrees
-            //             if self.angle < 0.0 {
-            //                 self.angle += turn_speed;
-            //             }
-            //         }
-            //         2 => {
-            //             // Left turn to West: -90 to 180 degrees
-            //             if self.angle > -180.0 {
-            //                 self.angle -= turn_speed;
-            //             }
-            //         }
-            //         _ => unreachable!(),
-            //     }
-            // } // North
-            // 1 => {
-            //     match self.route {
-            //         0 => (), // Straight: maintain 90 degrees
-            //         1 => {
-            //             // Right turn to West: 90 to 180 degrees
-            //             if self.angle < 180.0 {
-            //                 self.angle += turn_speed;
-            //             }
-            //         }
-            //         2 => {
-            //             // Left turn to East: 90 to 0 degrees
-            //             if self.angle > 0.0 {
-            //                 self.angle -= turn_speed;
-            //             }
-            //         }
-            //         _ => unreachable!(),
-            //     }
-            // } // South
-            // 2 => {
-            //     match self.route {
-            //         0 => (), // Straight: maintain 180 degrees
-            //         1 => {
-            //             // Right turn to North: 180 to -90 degrees
-            //             if self.angle > -90.0 {
-            //                 self.angle -= turn_speed;
-            //             }
-            //         }
-            //         2 => {
-            //             // Left turn to South: 180 to 90 degrees
-            //             if self.angle > 90.0 {
-            //                 self.angle -= turn_speed;
-            //             }
-            //         }
-            //         _ => unreachable!(),
-            //     }
-            // } // East
-            // 3 => {
-            //     match self.route {
-            //         0 => (), // Straight: maintain 0 degrees
-            //         1 => {
-            //             // Right turn to South: 0 to 90 degrees
-            //             if self.angle < 90.0 {
-            //                 self.angle += turn_speed;
-            //             }
-            //         }
-            //         2 => {
-            //             // Left turn to North: 0 to -90 degrees
-            //             if self.angle > -90.0 {
-            //                 self.angle -= turn_speed;
-            //             }
-            //         }
-            //         _ => unreachable!(),
-            //     }
-            // } // West
-            // _ => (),
             0 => { // Moving North
                 // Left turn to West
                 if self.angle > -180.0 {
@@ -302,10 +282,21 @@ impl Vehicle {
         }
     }
 
+    /// Checks if vehicle has completed its journey
+    /// 
+    /// # Returns
+    /// Boolean indicating if vehicle has left the simulation bounds
     pub fn is_finished(&self) -> bool {
         self.x < 0.0 || self.x > ROAD_HEIGHT as f64 || self.y < 0.0 || self.y > ROAD_HEIGHT as f64
     }
 
+    /// Renders vehicle on the canvas
+    /// 
+    /// # Arguments
+    /// * `canvas` - SDL2 canvas to draw on
+    /// 
+    /// # Returns
+    /// Result indicating if drawing was successful
     pub fn draw(&self, canvas: &mut Canvas<Window>) -> Result<(), String> {
         let rect = Rect::new(
             self.x as i32 - VEHICLE_SIZE as i32 / 2,
