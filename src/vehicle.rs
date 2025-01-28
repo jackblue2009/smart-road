@@ -278,9 +278,9 @@ impl Vehicle {
         next_y: f64,
         vehicles: &[Vehicle],
     ) -> bool {
-        if self.is_collision(next_x, next_y, vehicles) {
-            return false;
-        }
+        // if self.is_collision(next_x, next_y, vehicles) {
+        //     return false;
+        // }
 
         true
     }
