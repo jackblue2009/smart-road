@@ -37,7 +37,7 @@ impl World {
             // traffic_lights,
             last_vehicle_spawn_time: Instant::now(),
             vehicle_spawn_cooldown: Duration::from_millis(500),
-            max_vehicles: 8,
+            max_vehicles: 16,
         }
     }
 
@@ -69,7 +69,6 @@ impl World {
             1 => (
                 380 - ROAD_WIDTH as i32 / 3 + lane_width as i32 * (self.vehicles.len() % 3) as i32,
                 0,
-                -90.0,
                 1,
             ),
             
@@ -77,7 +76,6 @@ impl World {
             2 => (
                 800,
                 280 - ROAD_WIDTH as i32 / 3 + lane_width as i32 * (self.vehicles.len() % 3) as i32,
-                180.0,
                 2,
             ),
             
@@ -85,7 +83,6 @@ impl World {
             0 => (
                 420 + lane_width as i32 * (self.vehicles.len() % 3) as i32,
                 600,
-                270.0,
                 0,
             ),
             
@@ -93,7 +90,6 @@ impl World {
             3 => (
                 0,
                 320 + lane_width as i32 * (self.vehicles.len() % 3) as i32,
-                0.0,
                 3,
             ),
             
@@ -101,8 +97,8 @@ impl World {
         };
 
         let lane = match self.vehicles.len() % 3 {
-            0 => Lane::Right,
-            1 => Lane::Middle,
+            0 => Lane::Middle,
+            1 => Lane::Right,
             2 => Lane::Left,
             _ => unreachable!(),
         };
@@ -111,7 +107,6 @@ impl World {
             spawn_config.0,
             spawn_config.1, 
             spawn_config.2,
-            spawn_config.3,
             lane
         ));
         self.last_vehicle_spawn_time = Instant::now();
@@ -204,163 +199,18 @@ impl World {
         Ok(())
     }
 
-    // pub fn handle_key_event(&mut self, keycode: Keycode) {
-    //     let mut rng = rand::thread_rng();
-    //     // let route = rng.gen_range(0..3);
-    //     // // let route = (self.vehicles.len() % 3) as u8;
-    //     // let lane_width = ROAD_WIDTH / 6;
-    //     // if Instant::now().duration_since(self.last_vehicle_spawn_time) < self.vehicle_spawn_cooldown
-    //     //     || self.vehicles.len() >= self.max_vehicles
-    //     // {
-    //     //     return;
-    //     // }
-    //     // let lane_width = ROAD_WIDTH / 6;
-    //     // let route = (self.vehicles.len() % 3) as u8;  // 0: right, 1: straight, 2: left
-
-    //     if Instant::now().duration_since(self.last_vehicle_spawn_time) < self.vehicle_spawn_cooldown
-    //     || self.vehicles.len() >= self.max_vehicles
-    //     {
-    //         return;
-    //     }
-
-    //     let lane_width = ROAD_WIDTH / 6;
-
-    //     // Define spawn positions for each lane and direction
-    //     let spawn_config = match keycode {
-    //         // From North
-    //         Keycode::Down => Some((
-    //             380 - ROAD_WIDTH as i32 / 3 + lane_width as i32 * (self.vehicles.len() % 3) as i32,  // Align with lanes
-    //             0,
-    //             90.0,
-    //             1,
-    //         )),
-            
-    //         // From East
-    //         Keycode::Left => Some((
-    //             800,
-    //             280 - ROAD_WIDTH as i32 / 3 + lane_width as i32 * (self.vehicles.len() % 3) as i32,
-    //             180.0,
-    //             2,
-    //         )),
-            
-    //         // From South
-    //         Keycode::Up => Some((
-    //             420 + lane_width as i32 * (self.vehicles.len() % 3) as i32,
-    //             600,
-    //             270.0,
-    //             0,
-    //         )),
-            
-    //         // From West
-    //         Keycode::Right => Some((
-    //             0,
-    //             320 + lane_width as i32 * (self.vehicles.len() % 3) as i32,
-    //             0.0,
-    //             3,
-    //         )),
-            
-    //         _ => None,
-    //     };
-
-    //     if let Some((x, y, angle, direction)) = spawn_config {
-    //         let lane = match self.vehicles.len() % 3 {
-    //             0 => Lane::Right,
-    //             1 => Lane::Middle,
-    //             2 => Lane::Left,
-    //             _ => unreachable!(),
-    //         };
-            
-    //         self.vehicles.push(Vehicle::new(x, y, angle, direction, lane));
-    //         self.last_vehicle_spawn_time = Instant::now();
-    //     }
-
-    //     // // Define routing options for each direction
-    //     // let routing_options = [
-    //     //     // Up arrow (spawn from South, moving North)
-    //     //     VehicleRouting {
-    //     //         spawn_x: 400 + ROAD_WIDTH as i32 / 2 - (lane_width as i32 * (3-route as i32) - lane_width as i32 / 2),
-    //     //         spawn_y: 600,
-    //     //         spawn_angle: -90.0,
-    //     //         spawn_direction: 0,
-    //     //         allowed_routes: &[0, 1, 2],
-    //     //     },
-    //     //     // Down arrow (spawn from North, moving South)
-    //     //     VehicleRouting {
-    //     //         spawn_x: 400 - ROAD_WIDTH as i32 / 2 + (lane_width as i32 * route as i32 + lane_width as i32 / 2),
-    //     //         spawn_y: 0,
-    //     //         spawn_angle: 90.0,
-    //     //         spawn_direction: 1,
-    //     //         allowed_routes: &[0, 1, 2],
-    //     //     },
-    //     //     // Left arrow (spawn from East, moving West)
-    //     //     VehicleRouting {
-    //     //         spawn_x: 800,
-    //     //         spawn_y: 300 - ROAD_WIDTH as i32 / 2 + (lane_width as i32 * route as i32 + lane_width as i32 / 2),
-    //     //         spawn_angle: 180.0,
-    //     //         spawn_direction: 2,
-    //     //         allowed_routes: &[0, 1, 2],
-    //     //     },
-    //     //     // Right arrow (spawn from West, moving East)
-    //     //     VehicleRouting {
-    //     //         spawn_x: 0,
-    //     //         spawn_y: 300 + ROAD_WIDTH as i32 / 2 - (lane_width as i32 * (3-route as i32) - lane_width as i32 / 2),
-    //     //         spawn_angle: 0.0,
-    //     //         spawn_direction: 3,
-    //     //         allowed_routes: &[0, 1, 2],
-    //     //     },
-    //     // ];
-
-    //     // // Match keycode to appropriate routing
-    //     // match keycode {
-    //     //     Keycode::Up | Keycode::Down | Keycode::Left | Keycode::Right => {
-    //     //         let direction_index = match keycode {
-    //     //             Keycode::Up => 0,
-    //     //             Keycode::Down => 1,
-    //     //             Keycode::Left => 2,
-    //     //             Keycode::Right => 3,
-    //     //             _ => unreachable!()
-    //     //         };
-    //     //         // Cycle through lanes 0,1,2 (right, straight, left)
-    //     //         let route = (self.vehicles.len() % 3) as u8;
-    //     //         let routing = &routing_options[direction_index];
-    //     //         self.vehicles.push(Vehicle::new(
-    //     //             routing.spawn_x,
-    //     //             routing.spawn_y,
-    //     //             routing.spawn_angle,
-    //     //             routing.spawn_direction,
-    //     //             Lane::Middle
-    //     //         ));
-    //     //         self.last_vehicle_spawn_time = Instant::now();
-    //     //     }
-    //     //     Keycode::R => {
-    //     //         // Random direction spawn
-    //     //         let routing = &routing_options[rng.gen_range(0..4)];
-    //     //         let route = routing.allowed_routes[rng.gen_range(0..routing.allowed_routes.len())];
-    //     //         self.vehicles.push(Vehicle::new(
-    //     //             routing.spawn_x,
-    //     //             routing.spawn_y,
-    //     //             routing.spawn_angle,
-    //     //             routing.spawn_direction,
-    //     //             Lane::Middle
-    //     //         ));
-    //     //         self.last_vehicle_spawn_time = Instant::now();
-    //     //     }
-    //     //     _ => {}
-    //     // }
-    // }
-
     fn spawn_vehicle(&mut self, direction: u8) {
         let (x, y, angle) = match direction {
-            0 => (420, 580, 180.0), // Bottom to top
+            0 => (420, 580, 0.0), // Bottom to top
             1 => (380, 20, 0.0),    // Top to bottom
-            2 => (20, 320, 90.0),   // Left to right
-            3 => (780, 280, -90.0), // Right to left
+            2 => (20, 320, 0.0),   // Left to right
+            3 => (780, 280, 0.0), // Right to left
             _ => unreachable!(),
         };
 
         let route = rand::thread_rng().gen_range(0..3);
         //let route = 1;
         self.vehicles
-            .push(Vehicle::new(x, y, angle, direction, Lane::Middle));
+            .push(Vehicle::new(x, y, direction, Lane::Middle));
     }
 }
