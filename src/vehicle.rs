@@ -1,9 +1,13 @@
+use std::sync::atomic::{AtomicU32, Ordering};
+
 use crate::road::{ROAD_HEIGHT, ROAD_WIDTH};
 // use crate::traffic_light::TrafficLight;
 use sdl2::rect::Rect;
 use sdl2::render::Canvas;
 use sdl2::video::Window;
 use std::f64::consts::PI;
+
+static VEHICLE_ID_COUNTER: AtomicU32 = AtomicU32::new(1);
 
 const VEHICLE_SIZE: u32 = 30;
 const VEHICLE_SPEED: f64 = 2.0;
@@ -27,6 +31,7 @@ pub enum Lane {
 
 #[derive(Clone)]
 pub struct Vehicle {
+    id: u32,
     x: f64,
     y: f64,
     angle: f64,
@@ -69,6 +74,7 @@ impl Vehicle {
         };
 
         Vehicle {
+            id: VEHICLE_ID_COUNTER.fetch_add(1, Ordering::SeqCst),
             x: x as f64,
             y: y as f64,
             angle: init_angle,
@@ -87,8 +93,6 @@ impl Vehicle {
     /// Calculates next position, checks if movement is possible, and updates position/angle
     /// if vehicle is in intersection
     pub fn update(&mut self, vehicles: &[Vehicle]) {
-        //self.update_angle();
-        //self.update_angle_at_point(420.0, 500.0);
         self.update_left_from_north(420.0, 280.0);
         self.update_left_from_south(300.0, 200.0);
         self.update_left_from_west(500.0, 200.0);
@@ -97,21 +101,16 @@ impl Vehicle {
         self.update_right_from_south(380.0, 320.0);
         self.update_right_from_west(380.0, 280.0);
         self.update_right_from_east(300.0, 400.0);
-        let (dx, dy) = self.get_movement_vector();
+        let (dx, dy) = self.get_movement_vector(vehicles);
         let next_x = self.x + dx;
         let next_y = self.y + dy;
         if self.can_move(next_x, next_y, vehicles) {
             self.x = next_x;
             self.y = next_y;
-            
-            if (self.lane == Lane::Left && self.direction == 3) {
-                println!("EAST: {}X - {}Y", self.x, self.y);
-            }
 
-            // if self.is_in_intersection() {
-            //     self.update_angle();
-            // }
-            // self.update_angle();
+            if self.is_in_intersection() {
+                println!("Vehicle {} is in intersection at {}X {}Y", self.id, self.x, self.y);
+            }
         }
     }
 
@@ -187,29 +186,29 @@ impl Vehicle {
         }
     }
 
-    fn update_angle_at_point(&mut self, target_x: f64, target_y: f64) {
-        if self.x == target_x && self.y == target_y {
-            match (self.direction, self.lane) {
-                (0, Lane::Left) => self.angle = 180.0,   // North + Left = turn left
-                (0, Lane::Right) => self.angle = -90.0, // North + Right = turn right
-                (0, Lane::Middle) => self.angle = 0.0,  // North + Middle = straight
+    // fn update_angle_at_point(&mut self, target_x: f64, target_y: f64) {
+    //     if self.x == target_x && self.y == target_y {
+    //         match (self.direction, self.lane) {
+    //             (0, Lane::Left) => self.angle = 180.0,   // North + Left = turn left
+    //             (0, Lane::Right) => self.angle = -90.0, // North + Right = turn right
+    //             (0, Lane::Middle) => self.angle = 0.0,  // North + Middle = straight
                 
-                (1, Lane::Left) => self.angle = 0.0,   // South + Left = turn left
-                (1, Lane::Right) => self.angle = -90.0, // South + Right = turn right
-                (1, Lane::Middle) => self.angle = 180.0,// South + Middle = straight
+    //             (1, Lane::Left) => self.angle = 0.0,   // South + Left = turn left
+    //             (1, Lane::Right) => self.angle = -90.0, // South + Right = turn right
+    //             (1, Lane::Middle) => self.angle = 180.0,// South + Middle = straight
                 
-                (2, Lane::Left) => self.angle = 270.0,    // West + Left = turn left
-                (2, Lane::Right) => self.angle = 180.0, // West + Right = turn right
-                (2, Lane::Middle) => self.angle = -90.0,// West + Middle = straight
+    //             (2, Lane::Left) => self.angle = 270.0,    // West + Left = turn left
+    //             (2, Lane::Right) => self.angle = 180.0, // West + Right = turn right
+    //             (2, Lane::Middle) => self.angle = -90.0,// West + Middle = straight
                 
-                (3, Lane::Left) => self.angle = 0.0,    // East + Left = turn left
-                (3, Lane::Right) => self.angle = 180.0, // East + Right = turn right
-                (3, Lane::Middle) => self.angle = 90.0, // East + Middle = straight
+    //             (3, Lane::Left) => self.angle = 0.0,    // East + Left = turn left
+    //             (3, Lane::Right) => self.angle = 180.0, // East + Right = turn right
+    //             (3, Lane::Middle) => self.angle = 90.0, // East + Middle = straight
 
-                (_, _) => self.angle = 0.0,
-            }
-        }
-    }
+    //             (_, _) => self.angle = 0.0,
+    //         }
+    //     }
+    // }
 
     /// Calculates movement vector based on current direction and intersection status
     /// 
@@ -217,7 +216,7 @@ impl Vehicle {
     /// Tuple (dx, dy) representing movement delta:
     /// - In intersection: Uses angle-based vector calculation
     /// - Outside intersection: Uses fixed directional movement
-    fn get_movement_vector(&self) -> (f64, f64) {
+    fn get_movement_vector(&mut self, vehicles: &[Vehicle]) -> (f64, f64) {
         // match self.direction {
         //     0 => (0.0, -VEHICLE_SPEED), // North
         //     1 => (0.0, VEHICLE_SPEED),  // South 
@@ -225,10 +224,43 @@ impl Vehicle {
         //     3 => (VEHICLE_SPEED, 0.0),  // East
         //     _ => (0.0, 0.0),
         // }
+        let current_speed = self.slowing_down(vehicles);
         let rad = self.angle * PI / 180.0;
-        let dx = VEHICLE_SPEED * rad.cos();
-        let dy = VEHICLE_SPEED * rad.sin();
+        let dx = current_speed * rad.cos();
+        let dy = current_speed * rad.sin();
         (dx, dy)
+    }
+
+    fn slowing_down(&mut self, vehicles: &[Vehicle]) -> f64 {
+        let slow_down_distance = 50.0; // Distance to start slowing
+        let min_speed = 0.5; // Minimum speed when slowing down
+        
+        for other in vehicles {
+            if std::ptr::eq(self, other) {
+                continue;
+            }
+            
+            let dx = other.x - self.x;
+            let dy = other.y - self.y;
+            let distance = (dx * dx + dy * dy).sqrt();
+            
+            // Check if vehicle is ahead in same direction
+            let is_ahead = match self.direction {
+                0 => other.y < self.y && (other.x - self.x).abs() < VEHICLE_SIZE as f64, // North
+                1 => other.y > self.y && (other.x - self.x).abs() < VEHICLE_SIZE as f64, // South
+                2 => other.x < self.x && (other.y - self.y).abs() < VEHICLE_SIZE as f64, // West
+                3 => other.x > self.x && (other.y - self.y).abs() < VEHICLE_SIZE as f64, // East
+                _ => false,
+            };
+
+            if is_ahead && distance < slow_down_distance {
+                // Calculate reduced speed based on distance
+                let speed_factor = (distance / slow_down_distance).max(min_speed);
+                return VEHICLE_SPEED * speed_factor;
+            }
+        }
+        
+        VEHICLE_SPEED // Return normal speed if no vehicle ahead
     }
 
     /// Determines if vehicle can safely move to next position
@@ -246,9 +278,9 @@ impl Vehicle {
         next_y: f64,
         vehicles: &[Vehicle],
     ) -> bool {
-        // if self.is_collision(next_x, next_y, vehicles) {
-        //     return false;
-        // }
+        if self.is_collision(next_x, next_y, vehicles) {
+            return false;
+        }
 
         true
     }
@@ -282,10 +314,10 @@ impl Vehicle {
                 _ => false,
             };
 
-            println!(
-                "Self pos: ({}, {}), Other pos: ({}, {}), Distance: {}",
-                next_x, next_y, other.x, other.y, distance
-            );
+            // println!(
+            //     "Self pos: ({}, {}), Other pos: ({}, {}), Distance: {}",
+            //     next_x, next_y, other.x, other.y, distance
+            // );
 
             if is_ahead && distance < SAFETY_DISTANCE {
                 return true;
