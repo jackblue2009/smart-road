@@ -36,7 +36,7 @@ impl World {
             vehicles: Vec::new(),
             // traffic_lights,
             last_vehicle_spawn_time: Instant::now(),
-            vehicle_spawn_cooldown: Duration::from_millis(200),
+            vehicle_spawn_cooldown: Duration::from_millis(500),
             max_vehicles: 10,
         }
     }
