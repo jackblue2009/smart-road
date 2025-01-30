@@ -37,7 +37,7 @@ impl World {
             // traffic_lights,
             last_vehicle_spawn_time: Instant::now(),
             vehicle_spawn_cooldown: Duration::from_millis(200),
-            max_vehicles: 8,
+            max_vehicles: 16,
         }
     }
 
