@@ -11,7 +11,7 @@ static VEHICLE_ID_COUNTER: AtomicU32 = AtomicU32::new(1);
 
 const VEHICLE_SIZE: u32 = 30;
 const VEHICLE_SPEED: f64 = 2.0;
-const SAFETY_DISTANCE: f64 = 40.0;
+const SAFETY_DISTANCE: f64 = 50.0;
 const STOPPING_DISTANCE: f64 = 40.0; // Distance at which to start slowing down
 
 const NORTH_STOP_POS: f64 = 158.0;
