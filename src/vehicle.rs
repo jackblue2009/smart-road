@@ -107,11 +107,12 @@ impl Vehicle {
         if self.can_move(next_x, next_y, vehicles) {
             self.x = next_x;
             self.y = next_y;
+            //println!("Vehicle {} moved to {}X {}Y", self.id, self.x, self.y);
+        }
 
-            if self.is_in_intersection() {
-                println!("Vehicle {} is in intersection at {}X {}Y", self.id, self.x, self.y);
-                //self.update_glow();
-            }
+        if self.is_in_intersection() {
+            println!("Vehicle {} is in intersection at {}X {}Y", self.id, self.x, self.y);
+            //self.update_glow();
         }
     }
 
@@ -186,30 +187,6 @@ impl Vehicle {
             self.angle = 90.0;
         }
     }
-
-    // fn update_angle_at_point(&mut self, target_x: f64, target_y: f64) {
-    //     if self.x == target_x && self.y == target_y {
-    //         match (self.direction, self.lane) {
-    //             (0, Lane::Left) => self.angle = 180.0,   // North + Left = turn left
-    //             (0, Lane::Right) => self.angle = -90.0, // North + Right = turn right
-    //             (0, Lane::Middle) => self.angle = 0.0,  // North + Middle = straight
-                
-    //             (1, Lane::Left) => self.angle = 0.0,   // South + Left = turn left
-    //             (1, Lane::Right) => self.angle = -90.0, // South + Right = turn right
-    //             (1, Lane::Middle) => self.angle = 180.0,// South + Middle = straight
-                
-    //             (2, Lane::Left) => self.angle = 270.0,    // West + Left = turn left
-    //             (2, Lane::Right) => self.angle = 180.0, // West + Right = turn right
-    //             (2, Lane::Middle) => self.angle = -90.0,// West + Middle = straight
-                
-    //             (3, Lane::Left) => self.angle = 0.0,    // East + Left = turn left
-    //             (3, Lane::Right) => self.angle = 180.0, // East + Right = turn right
-    //             (3, Lane::Middle) => self.angle = 90.0, // East + Middle = straight
-
-    //             (_, _) => self.angle = 0.0,
-    //         }
-    //     }
-    // }
 
     /// Calculates movement vector based on current direction and intersection status
     /// 
@@ -355,12 +332,12 @@ impl Vehicle {
     /// # Returns
     /// Boolean indicating if vehicle is inside the intersection area
     /// defined by ROAD_WIDTH around intersection center (400, 300)
-    fn is_in_intersection(&self) -> bool {
+    pub fn is_in_intersection(&self) -> bool {
         // Define intersection boundaries at road ends
-        let intersection_left = 400.0;
-        let intersection_right = 400.0;
-        let intersection_top = 300.0; 
-        let intersection_bottom = 300.0;
+        let intersection_left = 304.0;
+        let intersection_right = 502.0;
+        let intersection_top = 198.0; 
+        let intersection_bottom = 406.0;
 
         self.x > intersection_left 
             && self.x < intersection_right
