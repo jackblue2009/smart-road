@@ -11,8 +11,13 @@ static VEHICLE_ID_COUNTER: AtomicU32 = AtomicU32::new(1);
 
 const VEHICLE_SIZE: u32 = 30;
 const VEHICLE_SPEED: f64 = 2.0;
-const SAFETY_DISTANCE: f64 = 15.0;
-const STOPPING_DISTANCE: f64 = 30.0; // Distance at which to start slowing down
+const SAFETY_DISTANCE: f64 = 20.0;
+const STOPPING_DISTANCE: f64 = 40.0; // Distance at which to start slowing down
+
+const NORTH_STOP_POS: f64 = 158.0;
+const SOUTH_STOP_POS: f64 = 440.0;
+const WEST_STOP_POS: f64 = 260.0;
+const EAST_STOP_POS: f64 = 540.0;
 
 #[allow(dead_code)]
 const TURNING_RADIUS: f64 = 30.0;
@@ -256,9 +261,23 @@ impl Vehicle {
         next_y: f64,
         vehicles: &[Vehicle],
     ) -> bool {
-        // if self.is_collision(next_x, next_y, vehicles) {
-        //     return false;
-        // }
+        if self.is_collision(next_x, next_y, vehicles) {
+            return false;
+        }
+
+        for other in vehicles {
+            if other.is_in_intersection() {
+                if next_x == WEST_STOP_POS && self.direction == 3 {
+                    return false;
+                } else if next_x == EAST_STOP_POS && self.direction == 2 {
+                    return false;
+                } else if next_y == SOUTH_STOP_POS && self.direction == 0 {
+                    return false;
+                } else if next_y == NORTH_STOP_POS && self.direction == 1 {
+                    return false;
+                }
+            }
+        }
 
         true
     }
