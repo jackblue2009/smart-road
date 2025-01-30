@@ -12,14 +12,14 @@ use std::time::{Duration, Instant};
 use crate::vehicle::Lane;
 
 // Define allowed routes for each spawn direction
-#[derive(Debug, Clone, Copy)]
-struct VehicleRouting {
-    spawn_x: i32,
-    spawn_y: i32,
-    spawn_angle: f64,
-    spawn_direction: u8,
-    allowed_routes: &'static [u8], // 0: straight, 1: right, 2: left
-}
+// #[derive(Debug, Clone, Copy)]
+// struct VehicleRouting {
+//     spawn_x: i32,
+//     spawn_y: i32,
+//     spawn_angle: f64,
+//     spawn_direction: u8,
+//     allowed_routes: &'static [u8], // 0: straight, 1: right, 2: left
+// }
 
 pub struct World {
     vehicles: Vec<Vehicle>,
@@ -36,8 +36,8 @@ impl World {
             vehicles: Vec::new(),
             // traffic_lights,
             last_vehicle_spawn_time: Instant::now(),
-            vehicle_spawn_cooldown: Duration::from_millis(500),
-            max_vehicles: 16,
+            vehicle_spawn_cooldown: Duration::from_millis(2500),
+            max_vehicles: 8,
         }
     }
 
@@ -200,7 +200,7 @@ impl World {
     }
 
     fn spawn_vehicle(&mut self, direction: u8) {
-        let (x, y, angle) = match direction {
+        let (x, y, _angle) = match direction {
             0 => (420, 580, 0.0), // Bottom to top
             1 => (380, 20, 0.0),    // Top to bottom
             2 => (20, 320, 0.0),   // Left to right
@@ -209,6 +209,7 @@ impl World {
         };
 
         let route = rand::thread_rng().gen_range(0..3);
+        println!("Generated Vehicle On Route: {}", route);
         //let route = 1;
         self.vehicles
             .push(Vehicle::new(x, y, direction, Lane::Middle));

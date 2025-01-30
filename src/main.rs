@@ -36,7 +36,7 @@ fn main() -> Result<(), String> {
                     ..
                 } => break 'running,
                 Event::KeyDown {
-                    keycode: Some(keycode),
+                    //keycode: Some(keycode),
                     ..
                 } => {
                     //world.handle_key_event(keycode);

@@ -110,78 +110,79 @@ impl Vehicle {
 
             if self.is_in_intersection() {
                 println!("Vehicle {} is in intersection at {}X {}Y", self.id, self.x, self.y);
+                //self.update_glow();
             }
         }
     }
 
     fn update_left_from_north(&mut self, target_x: f64, target_y: f64) {
-        if self.lane != Lane::Middle {
+        if self.lane != Lane::Middle || self.direction != 0 {
             return;
         }
-        if self.x == target_x && self.y == target_y && self.direction == 0 {
+        if self.x == target_x && self.y == target_y {
             self.angle = 180.0;
         }
     }
 
     fn update_left_from_south(&mut self, target_x: f64, target_y: f64) {
-        if self.lane != Lane::Middle {
+        if self.lane != Lane::Middle || self.direction != 1 {
             return;
         }
-        if self.x == target_x && self.y == target_y && self.direction == 1 {
+        if self.x == target_x && self.y == target_y {
             self.angle = 180.0;
         }
     }
 
     fn update_left_from_west(&mut self, target_x: f64, target_y: f64) {
-        if self.lane != Lane::Middle {
+        if self.lane != Lane::Middle || self.direction != 2 {
             return;
         }
-        if self.x == target_x && self.y == target_y && self.direction == 2 {
+        if self.x == target_x && self.y == target_y {
             self.angle = 270.0;
         }
     }
 
     fn update_left_from_east(&mut self, target_x: f64, target_y: f64) {
-        if self.lane != Lane::Middle {
+        if self.lane != Lane::Middle || self.direction != 3 {
             return;
         }
-        if self.x == target_x && self.y == target_y && self.direction == 3 {
+        if self.x == target_x && self.y == target_y {
             self.angle = -90.0;
         }
     }
 
     fn update_right_from_north(&mut self, target_x: f64, target_y: f64) {
-        if self.lane != Lane::Left {
+        if self.lane != Lane::Left || self.direction != 0 {
             return;
         }
-        if self.x == target_x && self.y == target_y && self.direction == 0 {
+        if self.x == target_x && self.y == target_y {
             self.angle = 0.0;
         }
     }
 
     fn update_right_from_south(&mut self, target_x: f64, target_y: f64) {
-        if self.lane != Lane::Left {
+        if self.lane != Lane::Left || self.direction != 1 {
             return;
         }
-        if self.x == target_x && self.y == target_y && self.direction == 1 {
+        if self.x == target_x && self.y == target_y {
             self.angle = 0.0;
         }
     }
 
     fn update_right_from_west(&mut self, target_x: f64, target_y: f64) {
-        if self.lane != Lane::Left {
+        if self.lane != Lane::Left || self.direction != 2 {
             return;
         }
-        if self.x == target_x && self.y == target_y && self.direction == 2 {
+        if self.x == target_x && self.y == target_y {
             self.angle = 90.0;
         }
     }
 
     fn update_right_from_east(&mut self, target_x: f64, target_y: f64) {
-        if self.lane != Lane::Left {
+        if self.lane != Lane::Left || self.direction != 3 {
             return;
         }
-        if self.x == target_x && self.y == target_y && self.direction == 3 {
+        if self.x == target_x && self.y == target_y {
             self.angle = 90.0;
         }
     }
@@ -368,14 +369,14 @@ impl Vehicle {
     }
 
     /// Determines if vehicle is approaching intersection
-    /// 
+    ///
     /// # Returns
     /// Boolean indicating if vehicle is within approach zone
     /// (2 lane widths before intersection)
     fn is_approaching_intersection(&self) -> bool {
         let lane_width = ROAD_WIDTH as f64 / 6.0; // Each lane is 40 units wide
         let approach_distance = lane_width * 2.0;  // Two lane widths of approach distance
-        
+
         match self.direction {
             0 => self.y > 300.0 + ROAD_WIDTH as f64 && self.y < 300.0 + ROAD_WIDTH as f64 + approach_distance, // Northbound
             1 => self.y < 300.0 - ROAD_WIDTH as f64 && self.y > 300.0 - ROAD_WIDTH as f64 - approach_distance, // Southbound
@@ -386,65 +387,66 @@ impl Vehicle {
     }
 
     /// Updates vehicle angle for turning movements in intersection
-    /// 
+    ///
     /// Modifies vehicle angle based on:
     /// - Current direction
     /// - Turn speed (2.0 degrees per update)
     /// - Normalizes final angle to -180 to 180 degree range
-    fn update_angle(&mut self) {
-        if self.direction == 0 && self.lane == Lane::Left {
-            if self.x == 500.0 {
-                self.angle = 90.0;
-            }
-        }
-        if self.direction == 0 && self.lane == Lane::Right {
-            if self.x == 300.0 {
-                self.angle = -90.0;
-            }
-        }
-        if self.direction == 0 && self.lane == Lane::Middle {
-            self.angle = -90.0;
-        }
-        if self.direction == 1 && self.lane == Lane::Left {
-            if self.x == 300.0 {
-                self.angle = 90.0;
-            }
-        }
-        if self.direction == 1 && self.lane == Lane::Right {
-            if self.x == 500.0 {
-                self.angle = -90.0;
-            }
-        }
-        if self.direction == 1 && self.lane == Lane::Middle {
-            self.angle = 90.0;
-        }
-        if self.direction == 2 && self.lane == Lane::Left {
-            if self.y == 500.0 {
-                self.angle = 0.0;
-            }
-        }
-        if self.direction == 2 && self.lane == Lane::Right {
-            if self.y == 300.0 {
-                self.angle = 180.0;
-            }
-        }
-        if self.direction == 2 && self.lane == Lane::Middle {
-            self.angle = 0.0;
-        }
-        if self.direction == 3 && self.lane == Lane::Left {
-            if self.y == 300.0 {
-                self.angle = 0.0;
-            }
-        }
-        if self.direction == 3 && self.lane == Lane::Right {
-            if self.y == 500.0 {
-                self.angle = 180.0;
-            }
-        }
-        if self.direction == 3 && self.lane == Lane::Middle {
-            self.angle = 0.0;
-        }
-    }
+
+    // fn update_angle(&mut self) {
+    //     if self.direction == 0 && self.lane == Lane::Left {
+    //         if self.x == 500.0 {
+    //             self.angle = 90.0;
+    //         }
+    //     }
+    //     if self.direction == 0 && self.lane == Lane::Right {
+    //         if self.x == 300.0 {
+    //             self.angle = -90.0;
+    //         }
+    //     }
+    //     if self.direction == 0 && self.lane == Lane::Middle {
+    //         self.angle = -90.0;
+    //     }
+    //     if self.direction == 1 && self.lane == Lane::Left {
+    //         if self.x == 300.0 {
+    //             self.angle = 90.0;
+    //         }
+    //     }
+    //     if self.direction == 1 && self.lane == Lane::Right {
+    //         if self.x == 500.0 {
+    //             self.angle = -90.0;
+    //         }
+    //     }
+    //     if self.direction == 1 && self.lane == Lane::Middle {
+    //         self.angle = 90.0;
+    //     }
+    //     if self.direction == 2 && self.lane == Lane::Left {
+    //         if self.y == 500.0 {
+    //             self.angle = 0.0;
+    //         }
+    //     }
+    //     if self.direction == 2 && self.lane == Lane::Right {
+    //         if self.y == 300.0 {
+    //             self.angle = 180.0;
+    //         }
+    //     }
+    //     if self.direction == 2 && self.lane == Lane::Middle {
+    //         self.angle = 0.0;
+    //     }
+    //     if self.direction == 3 && self.lane == Lane::Left {
+    //         if self.y == 300.0 {
+    //             self.angle = 0.0;
+    //         }
+    //     }
+    //     if self.direction == 3 && self.lane == Lane::Right {
+    //         if self.y == 500.0 {
+    //             self.angle = 180.0;
+    //         }
+    //     }
+    //     if self.direction == 3 && self.lane == Lane::Middle {
+    //         self.angle = 0.0;
+    //     }
+    // }
 
     /// Checks if vehicle has completed its journey
     /// 
@@ -470,5 +472,34 @@ impl Vehicle {
         );
         canvas.set_draw_color(self.color);
         canvas.fill_rect(rect)
+    }
+
+    pub fn update_glow(&mut self) -> Result<(), String> {
+        // let glow_sizes = [4, 8, 12, 16];
+        // let alphas = [200, 150, 100, 50];
+
+        // for (size, alpha) in glow_sizes.iter().zip(alphas.iter()) {
+        //     let glow_rect = Rect::new(
+        //         self.x as i32 - (VEHICLE_SIZE as i32 + size) / 2,
+        //         self.y as i32 - (VEHICLE_SIZE as i32 + size) / 2,
+        //         VEHICLE_SIZE + *size as u32,
+        //         VEHICLE_SIZE + *size as u32,
+        //     );
+
+        //     let glow_color = sdl2::pixels::Color::RGBA(
+        //         self.color.r,
+        //         self.color.g,
+        //         self.color.b,
+        //         *alpha,
+        //     );
+        // }
+
+        self.color = sdl2::pixels::Color::RGB(
+            (self.color.r as u16 + 40).min(255) as u8,
+            (self.color.g as u16 + 40).min(255) as u8,
+            (self.color.b as u16 + 40).min(255) as u8
+        );
+
+        Ok(())
     }
 }
