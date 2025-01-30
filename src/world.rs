@@ -36,7 +36,7 @@ impl World {
             vehicles: Vec::new(),
             // traffic_lights,
             last_vehicle_spawn_time: Instant::now(),
-            vehicle_spawn_cooldown: Duration::from_millis(500),
+            vehicle_spawn_cooldown: Duration::from_millis(650),
             max_vehicles: 10,
         }
     }
@@ -118,8 +118,15 @@ impl World {
     }
 
     pub fn auto_spawn(&mut self) {
-        if Instant::now().duration_since(self.last_vehicle_spawn_time) < self.vehicle_spawn_cooldown
-            || self.vehicles.len() >= self.max_vehicles {
+        // if Instant::now().duration_since(self.last_vehicle_spawn_time) < self.vehicle_spawn_cooldown
+        //     || self.vehicles.len() >= self.max_vehicles {
+        //     return;
+        // }
+        if self.vehicles.len() >= self.max_vehicles {
+            return;
+        }
+
+        if Instant::now().duration_since(self.last_vehicle_spawn_time) < self.vehicle_spawn_cooldown {
             return;
         }
 

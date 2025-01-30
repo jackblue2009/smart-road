@@ -6,13 +6,14 @@ use sdl2::rect::Rect;
 use sdl2::render::Canvas;
 use sdl2::video::Window;
 use std::f64::consts::PI;
+use rand::Rng;
 
 static VEHICLE_ID_COUNTER: AtomicU32 = AtomicU32::new(1);
 
 const VEHICLE_SIZE: u32 = 30;
 const VEHICLE_SPEED: f64 = 2.0;
 const SAFETY_DISTANCE: f64 = 50.0;
-const STOPPING_DISTANCE: f64 = 40.0; // Distance at which to start slowing down
+const STOPPING_DISTANCE: f64 = 35.0; // Distance at which to start slowing down
 
 const NORTH_STOP_POS: f64 = 158.0;
 const SOUTH_STOP_POS: f64 = 440.0;
@@ -241,16 +242,21 @@ impl Vehicle {
     fn slowing_down(&mut self, vehicles: &[Vehicle]) -> f64 {
         let slow_down_distance = 60.0; // Distance to start slowing
         let min_speed = 0.5; // Minimum speed when slowing down
-        
+        let rate = rand::thread_rng().gen_range(0.45..=0.75);
+
+        for other in vehicles {
+            if !other.is_in_intersection() && self.is_in_intersection() {
+                return VEHICLE_SPEED * rate; // Significant slowdown when approaching occupied intersection
+            }
+        }
+
         for other in vehicles {
             if std::ptr::eq(self, other) {
                 continue;
             }
-            
             let dx = other.x - self.x;
             let dy = other.y - self.y;
             let distance = (dx * dx + dy * dy).sqrt();
-            
             // Check if vehicle is ahead in same direction
             let is_ahead = match self.direction {
                 0 => other.y < self.y && (other.x - self.x).abs() < VEHICLE_SIZE as f64, // North
@@ -266,12 +272,12 @@ impl Vehicle {
                 return VEHICLE_SPEED * speed_factor;
             }
         }
-        
+
         VEHICLE_SPEED // Return normal speed if no vehicle ahead
     }
 
     /// Determines if vehicle can safely move to next position
-    /// 
+    ///
     /// # Arguments
     /// * `next_x` - Proposed next x coordinate
     /// * `next_y` - Proposed next y coordinate
