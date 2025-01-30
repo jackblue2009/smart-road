@@ -11,7 +11,7 @@ static VEHICLE_ID_COUNTER: AtomicU32 = AtomicU32::new(1);
 
 const VEHICLE_SIZE: u32 = 30;
 const VEHICLE_SPEED: f64 = 2.0;
-const SAFETY_DISTANCE: f64 = 20.0;
+const SAFETY_DISTANCE: f64 = 40.0;
 const STOPPING_DISTANCE: f64 = 40.0; // Distance at which to start slowing down
 
 const NORTH_STOP_POS: f64 = 158.0;
@@ -36,14 +36,14 @@ pub enum Lane {
 
 #[derive(Clone)]
 pub struct Vehicle {
-    id: u32,
-    x: f64,
-    y: f64,
-    angle: f64,
-    direction: u8,
+    pub id: u32,
+    pub x: f64,
+    pub y: f64,
+    pub angle: f64,
+    pub direction: u8,
     // route: u8,
-    lane: Lane,
-    color: sdl2::pixels::Color,
+    pub lane: Lane,
+    pub color: sdl2::pixels::Color,
 }
 
 #[allow(unused_variables, dead_code)]
@@ -116,7 +116,7 @@ impl Vehicle {
         }
 
         if self.is_in_intersection() {
-            println!("Vehicle {} is in intersection at {}X {}Y", self.id, self.x, self.y);
+           // println!("Vehicle {} is in intersection at {}X {}Y", self.id, self.x, self.y);
             //self.update_glow();
         }
     }
@@ -125,7 +125,10 @@ impl Vehicle {
         if self.lane != Lane::Middle || self.direction != 0 {
             return;
         }
-        if self.x == target_x && self.y == target_y {
+        // if self.x == target_x && self.y == target_y {
+        //     self.angle = 180.0;
+        // }
+        if (self.x - target_x).abs() < 5.0 && (self.y - target_y).abs() < 5.0 {
             self.angle = 180.0;
         }
     }
@@ -134,7 +137,10 @@ impl Vehicle {
         if self.lane != Lane::Middle || self.direction != 1 {
             return;
         }
-        if self.x == target_x && self.y == target_y {
+        // if self.x == target_x && self.y == target_y {
+        //     self.angle = 180.0;
+        // }
+        if (self.x - target_x).abs() < 5.0 && (self.y - target_y).abs() < 5.0 {
             self.angle = 180.0;
         }
     }
@@ -143,7 +149,10 @@ impl Vehicle {
         if self.lane != Lane::Middle || self.direction != 2 {
             return;
         }
-        if self.x == target_x && self.y == target_y {
+        // if self.x == target_x && self.y == target_y {
+        //     self.angle = 270.0;
+        // }
+        if (self.x - target_x).abs() < 5.0 && (self.y - target_y).abs() < 5.0 {
             self.angle = 270.0;
         }
     }
@@ -152,7 +161,10 @@ impl Vehicle {
         if self.lane != Lane::Middle || self.direction != 3 {
             return;
         }
-        if self.x == target_x && self.y == target_y {
+        // if self.x == target_x && self.y == target_y {
+        //     self.angle = -90.0;
+        // }
+        if (self.x - target_x).abs() < 5.0 && (self.y - target_y).abs() < 5.0 {
             self.angle = -90.0;
         }
     }
@@ -161,7 +173,10 @@ impl Vehicle {
         if self.lane != Lane::Left || self.direction != 0 {
             return;
         }
-        if self.x == target_x && self.y == target_y {
+        // if self.x == target_x && self.y == target_y {
+        //     self.angle = 0.0;
+        // }
+        if (self.x - target_x).abs() < 5.0 && (self.y - target_y).abs() < 5.0 {
             self.angle = 0.0;
         }
     }
@@ -170,7 +185,10 @@ impl Vehicle {
         if self.lane != Lane::Left || self.direction != 1 {
             return;
         }
-        if self.x == target_x && self.y == target_y {
+        // if self.x == target_x && self.y == target_y {
+        //     self.angle = 0.0;
+        // }
+        if (self.x - target_x).abs() < 5.0 && (self.y - target_y).abs() < 5.0 {
             self.angle = 0.0;
         }
     }
@@ -179,7 +197,10 @@ impl Vehicle {
         if self.lane != Lane::Left || self.direction != 2 {
             return;
         }
-        if self.x == target_x && self.y == target_y {
+        // if self.x == target_x && self.y == target_y {
+        //     self.angle = 90.0;
+        // }
+        if (self.x - target_x).abs() < 5.0 && (self.y - target_y).abs() < 5.0 {
             self.angle = 90.0;
         }
     }
@@ -188,7 +209,10 @@ impl Vehicle {
         if self.lane != Lane::Left || self.direction != 3 {
             return;
         }
-        if self.x == target_x && self.y == target_y {
+        // if self.x == target_x && self.y == target_y {
+        //     self.angle = 90.0;
+        // }
+        if (self.x - target_x).abs() < 5.0 && (self.y - target_y).abs() < 5.0 {
             self.angle = 90.0;
         }
     }
@@ -215,7 +239,7 @@ impl Vehicle {
     }
 
     fn slowing_down(&mut self, vehicles: &[Vehicle]) -> f64 {
-        let slow_down_distance = 50.0; // Distance to start slowing
+        let slow_down_distance = 60.0; // Distance to start slowing
         let min_speed = 0.5; // Minimum speed when slowing down
         
         for other in vehicles {
@@ -320,9 +344,9 @@ impl Vehicle {
                 return true;
             }
 
-            if distance < STOPPING_DISTANCE {
-                return true;
-            }
+            // if distance < STOPPING_DISTANCE {
+            //     return true;
+            // }
         }
         false
     }

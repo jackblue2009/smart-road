@@ -36,7 +36,7 @@ impl World {
             vehicles: Vec::new(),
             // traffic_lights,
             last_vehicle_spawn_time: Instant::now(),
-            vehicle_spawn_cooldown: Duration::from_millis(2500),
+            vehicle_spawn_cooldown: Duration::from_millis(200),
             max_vehicles: 8,
         }
     }
@@ -56,6 +56,10 @@ impl World {
 
     pub fn spawn_dir(&mut self, dir: u8) {
         if self.vehicles.len() >= self.max_vehicles {
+            return;
+        }
+
+        if Instant::now().duration_since(self.last_vehicle_spawn_time) < self.vehicle_spawn_cooldown {
             return;
         }
 
@@ -89,6 +93,13 @@ impl World {
             _ => unreachable!(),
         };
 
+        for other in &self.vehicles {
+            if other.x == spawn_config.0.into() && other.y == spawn_config.1.into() {
+                println!("Collision detected at {} {}! Spawn canceled.", spawn_config.0, spawn_config.1);
+                return;
+            }
+        }
+
         let lane = match self.vehicles.len() % 3 {
             0 => Lane::Middle,
             1 => Lane::Right,
@@ -102,6 +113,8 @@ impl World {
             spawn_config.2,
             lane,
         ));
+
+        self.last_vehicle_spawn_time = Instant::now();
     }
 
     pub fn auto_spawn(&mut self) {
