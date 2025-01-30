@@ -35,12 +35,19 @@ fn main() -> Result<(), String> {
                     keycode: Some(Keycode::Escape),
                     ..
                 } => break 'running,
-                Event::KeyDown {
-                    //keycode: Some(keycode),
-                    ..
-                } => {
-                    //world.handle_key_event(keycode);
-                }
+                    Event::KeyDown {
+                        keycode: Some(keycode),
+                        ..
+                    } => {
+                        match keycode {
+                            Keycode::Down => world.spawn_dir(1),
+                            Keycode::Up => world.spawn_dir(0),
+                            Keycode::Right => world.spawn_dir(3),
+                            Keycode::Left => world.spawn_dir(2),
+                            Keycode::R => world.auto_spawn(),
+                            _ => {}
+                        }
+                    }
                 _ => {}
             }
         }
@@ -48,7 +55,7 @@ fn main() -> Result<(), String> {
         canvas.set_draw_color(Color::RGB(0, 0, 0));
         canvas.clear();
 
-        world.auto_spawn();
+        //world.auto_spawn();
         world.update();
         world.draw(&mut canvas)?;
 

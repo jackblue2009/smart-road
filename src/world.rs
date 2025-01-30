@@ -54,6 +54,56 @@ impl World {
         self.vehicles.retain(|v| !v.is_finished());
     }
 
+    pub fn spawn_dir(&mut self, dir: u8) {
+        if self.vehicles.len() >= self.max_vehicles {
+            return;
+        }
+
+        let lane_width = ROAD_WIDTH / 6;
+
+        let spawn_config = match dir {
+            // From North
+            1 => (
+                380 - ROAD_WIDTH as i32 / 3 + lane_width as i32 * (self.vehicles.len() % 3) as i32,
+                0,
+                1,
+            ),
+            // From East
+            2 => (
+                800,
+                280 - ROAD_WIDTH as i32 / 3 + lane_width as i32 * (self.vehicles.len() % 3) as i32,
+                2,
+            ),
+            // From South
+            0 => (
+                420 + lane_width as i32 * (self.vehicles.len() % 3) as i32,
+                600,
+                0,
+            ),
+            // From West
+            3 => (
+                0,
+                320 + lane_width as i32 * (self.vehicles.len() % 3) as i32,
+                3,
+            ),
+            _ => unreachable!(),
+        };
+
+        let lane = match self.vehicles.len() % 3 {
+            0 => Lane::Middle,
+            1 => Lane::Right,
+            2 => Lane::Left,
+            _ => unreachable!(),
+        };
+
+        self.vehicles.push(Vehicle::new(
+            spawn_config.0,
+            spawn_config.1,
+            spawn_config.2,
+            lane,
+        ));
+    }
+
     pub fn auto_spawn(&mut self) {
         if Instant::now().duration_since(self.last_vehicle_spawn_time) < self.vehicle_spawn_cooldown
             || self.vehicles.len() >= self.max_vehicles {
@@ -71,28 +121,24 @@ impl World {
                 0,
                 1,
             ),
-            
-            // From East 
+            // From East
             2 => (
                 800,
                 280 - ROAD_WIDTH as i32 / 3 + lane_width as i32 * (self.vehicles.len() % 3) as i32,
                 2,
             ),
-            
             // From South
             0 => (
                 420 + lane_width as i32 * (self.vehicles.len() % 3) as i32,
                 600,
                 0,
             ),
-            
             // From West
             3 => (
                 0,
                 320 + lane_width as i32 * (self.vehicles.len() % 3) as i32,
                 3,
             ),
-            
             _ => unreachable!(),
         };
 
@@ -105,7 +151,7 @@ impl World {
 
         self.vehicles.push(Vehicle::new(
             spawn_config.0,
-            spawn_config.1, 
+            spawn_config.1,
             spawn_config.2,
             lane
         ));
