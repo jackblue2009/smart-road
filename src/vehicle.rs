@@ -102,10 +102,10 @@ impl Vehicle {
         self.update_left_from_north(420.0, 280.0);
         self.update_left_from_south(300.0, 200.0);
         self.update_left_from_west(500.0, 200.0);
-        self.update_left_from_east(420.0, 320.0);
+        self.update_left_from_east(424.0, 320.0);
         self.update_right_from_north(500.0, 400.0);
         self.update_right_from_south(380.0, 320.0);
-        self.update_right_from_west(380.0, 280.0);
+        self.update_right_from_west(375.0, 280.0);
         self.update_right_from_east(300.0, 400.0);
         let (dx, dy) = self.get_movement_vector(vehicles);
         let next_x = self.x + dx;
@@ -269,7 +269,7 @@ impl Vehicle {
             if is_ahead && distance < slow_down_distance {
                 // Calculate reduced speed based on distance
                 let speed_factor = (distance / slow_down_distance).max(min_speed);
-                return VEHICLE_SPEED * speed_factor;
+                return VEHICLE_SPEED * 0.3;
             }
         }
 
@@ -341,18 +341,18 @@ impl Vehicle {
                 _ => false,
             };
 
-            // println!(
-            //     "Self pos: ({}, {}), Other pos: ({}, {}), Distance: {}",
-            //     next_x, next_y, other.x, other.y, distance
-            // );
+            println!(
+                "Self pos: ({}, {}), Other pos: ({}, {}), Distance: {}",
+                next_x, next_y, other.x, other.y, distance
+            );
 
             if is_ahead && distance < SAFETY_DISTANCE {
                 return true;
             }
 
-            // if distance < STOPPING_DISTANCE {
-            //     return true;
-            // }
+            if distance < STOPPING_DISTANCE {
+                return true;
+            }
         }
         false
     }
