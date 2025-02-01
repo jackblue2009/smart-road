@@ -112,6 +112,7 @@ impl Vehicle {
         self.update_right_from_south(380.0, 325.0);
         self.update_right_from_west(375.0, 280.0);
         self.update_right_from_east(300.0, 400.0);
+
         let (dx, dy) = self.get_movement_vector(vehicles);
         let next_x = self.x + dx;
         let next_y = self.y + dy;
@@ -244,49 +245,95 @@ impl Vehicle {
         //     3 => (VEHICLE_SPEED, 0.0),  // East
         //     _ => (0.0, 0.0),
         // }
-        let current_speed = self.slowing_down(vehicles);
+        let current_speed = self.get_velocity(vehicles);
         let rad = self.angle * PI / 180.0;
         let dx = current_speed * rad.cos();
         let dy = current_speed * rad.sin();
         (dx, dy)
     }
 
-    fn slowing_down(&mut self, vehicles: &[Vehicle]) -> f64 {
-        let slow_down_distance = 60.0; // Distance to start slowing
-        let min_speed = 0.5; // Minimum speed when slowing down
-        let rate = rand::thread_rng().gen_range(0.15..=0.95);
+    pub fn get_velocity(&mut self, vehicles: &[Vehicle]) -> f64 {
+        let mut max_velocity = 0.0;
 
-        for other in vehicles {
-            if !other.is_in_intersection() && self.is_in_intersection() {
-                return VEHICLE_SPEED * rate; // Significant slowdown when approaching occupied intersection
-            }
-        }
-
-        for other in vehicles {
-            if std::ptr::eq(self, other) {
-                continue;
-            }
-            let dx = other.x - self.x;
-            let dy = other.y - self.y;
-            let distance = (dx * dx + dy * dy).sqrt();
-            // Check if vehicle is ahead in same direction
-            let is_ahead = match self.direction {
-                0 => other.y < self.y && (other.x - self.x).abs() < VEHICLE_SIZE as f64, // North
-                1 => other.y > self.y && (other.x - self.x).abs() < VEHICLE_SIZE as f64, // South
-                2 => other.x < self.x && (other.y - self.y).abs() < VEHICLE_SIZE as f64, // West
-                3 => other.x > self.x && (other.y - self.y).abs() < VEHICLE_SIZE as f64, // East
-                _ => false,
+        for vehicle in vehicles {
+            // Get current speed from slowing_down logic
+            let current_speed = match vehicle.is_in_intersection() {
+                true => VEHICLE_SPEED * rand::thread_rng().gen_range(0.15..=0.95),
+                false => VEHICLE_SPEED
             };
 
-            if is_ahead && distance < SAFETY_DISTANCE {
-                // Calculate reduced speed based on distance
-                let speed_factor = (distance / slow_down_distance).max(min_speed);
-                return VEHICLE_SPEED * 0.3;
+            // Calculate actual velocity components using angle
+            let rad = vehicle.angle * PI / 180.0;
+            let dx = current_speed * rad.cos();
+            let dy = current_speed * rad.sin();
+
+            // Get total velocity magnitude
+            let velocity = (dx * dx + dy * dy).sqrt();
+
+            if velocity > max_velocity {
+                max_velocity = velocity;
             }
         }
 
-        VEHICLE_SPEED // Return normal speed if no vehicle ahead
+        max_velocity
     }
+
+    // fn slowing_down(&mut self, vehicles: &[Vehicle]) -> f64 {
+    //     let slow_down_distance = 60.0; // Distance to start slowing
+    //     let min_speed = 0.5; // Minimum speed when slowing down
+    //     let rate = rand::thread_rng().gen_range(0.15..=0.95);
+    //     let stop_threshold = 2.0 * VEHICLE_SIZE as f64;
+
+    //     for other in vehicles {
+    //         if !other.is_in_intersection() && self.is_in_intersection() {
+    //             return VEHICLE_SPEED * rate; // Significant slowdown when approaching occupied intersection
+    //         }
+    //     }
+
+    //     for other in vehicles {
+    //         if std::ptr::eq(self, other) {
+    //             continue;
+    //         }
+    //         let dx = other.x - self.x;
+    //         let dy = other.y - self.y;
+    //         let distance = (dx * dx + dy * dy).sqrt();
+
+    //         // Check if vehicle is ahead in same direction
+    //         // let is_ahead = match self.direction {
+    //         //     0 => other.y < self.y && (other.x - self.x).abs() < VEHICLE_SIZE as f64, // North
+    //         //     1 => other.y > self.y && (other.x - self.x).abs() < VEHICLE_SIZE as f64, // South
+    //         //     2 => other.x < self.x && (other.y - self.y).abs() < VEHICLE_SIZE as f64, // West
+    //         //     3 => other.x > self.x && (other.y - self.y).abs() < VEHICLE_SIZE as f64, // East
+    //         //     _ => false,
+    //         // };
+    //         let is_ahead = match self.direction {
+    //             0 => other.y < self.y && (other.x - self.x).abs() < VEHICLE_SIZE as f64 * 2.0, // North
+    //             1 => other.y > self.y && (other.x - self.x).abs() < VEHICLE_SIZE as f64 * 2.0, // South
+    //             2 => other.x < self.x && (other.y - self.y).abs() < VEHICLE_SIZE as f64 * 2.0, // West
+    //             3 => other.x > self.x && (other.y - self.y).abs() < VEHICLE_SIZE as f64 * 2.0, // East
+    //             _ => false,
+    //         };
+
+    //         // if is_ahead && distance < SAFETY_DISTANCE {
+    //         //     // Calculate reduced speed based on distance
+    //         //     let speed_factor = (distance / slow_down_distance).max(min_speed);
+    //         //     return VEHICLE_SPEED * 0.3;
+    //         // }
+    //         if is_ahead {
+    //             // Complete stop when vehicle is within 2 units
+    //             if distance < stop_threshold {
+    //                 return 0.0;
+    //             }
+    //             // Gradual slowdown when approaching
+    //             if distance < SAFETY_DISTANCE {
+    //                 let speed_factor = ((distance - stop_threshold) / slow_down_distance).max(min_speed);
+    //                 return VEHICLE_SPEED * speed_factor * 0.3;
+    //             }
+    //         }
+    //     }
+
+    //     VEHICLE_SPEED // Return normal speed if no vehicle ahead
+    // }
 
     /// Determines if vehicle can safely move to next position
     ///

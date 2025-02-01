@@ -16,29 +16,20 @@ pub fn draw_panel(canvas: &mut Canvas<Window>, passed_vehicles: u32) {
 
     // Drawing the panel
     canvas.set_draw_color(panel_color);
-    let panel_rect = Rect::new(
-        200,
-        150,
-        400,
-        300,
-    );
+    let panel_rect = Rect::new(200, 150, 400, 300);
     let _ = canvas.fill_rect(panel_rect);
+
+    let texture_creator = canvas.texture_creator();
 
     // Drawing the title text
     let surface = title_font
         .render("Simulation Complete")
         .blended(title_color)
         .unwrap();
-    let texture_creator = canvas.texture_creator();
     let texture = texture_creator
         .create_texture_from_surface(&surface)
         .unwrap();
-    let text_rect = Rect::new(
-        300,
-        160,
-        200,
-        40,
-    );
+    let text_rect = Rect::new(300, 160, 200, 40);
     canvas.copy(&texture, None, Some(text_rect)).unwrap();
 
     //  Drawing the vehicles passed text
@@ -50,8 +41,20 @@ pub fn draw_panel(canvas: &mut Canvas<Window>, passed_vehicles: u32) {
     let vehicles_texture = texture_creator
         .create_texture_from_surface(&vehicles_surface)
         .unwrap();
-    let vehicles_rect = Rect::new(250, 220, 300, 30);
+    let vehicles_rect = Rect::new(220, 220, 360, 30);
     canvas.copy(&vehicles_texture, None, Some(vehicles_rect)).unwrap();
+
+    // Drawing max velocity of all vehicles text
+    let max_velocity_text = format!("Max velocity of all vehicles: {}", 0);
+    let max_velocity_surface = regular_font
+        .render(&max_velocity_text)
+        .blended(title_color)
+        .unwrap();
+    let max_velocity_texture = texture_creator
+        .create_texture_from_surface(&max_velocity_surface)
+        .unwrap();
+    let max_velocity_rect = Rect::new(220, 260, 360, 30);
+    canvas.copy(&max_velocity_texture, None, Some(max_velocity_rect)).unwrap();
 
     // Drawing the border
     canvas.set_draw_color(border_color);
