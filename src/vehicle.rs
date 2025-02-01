@@ -45,6 +45,7 @@ pub struct Vehicle {
     // route: u8,
     pub lane: Lane,
     pub color: sdl2::pixels::Color,
+    pub border_color: sdl2::pixels::Color,
 }
 
 #[allow(unused_variables, dead_code)]
@@ -88,6 +89,7 @@ impl Vehicle {
             // route,
             lane,
             color,
+            border_color: sdl2::pixels::Color::RGB(0, 255, 0),
         }
     }
 
@@ -99,17 +101,24 @@ impl Vehicle {
     /// Calculates next position, checks if movement is possible, and updates position/angle
     /// if vehicle is in intersection
     pub fn update(&mut self, vehicles: &[Vehicle]) {
-        self.update_left_from_north(420.0, 280.0);
+        self.update_left_from_north(420.0, 277.0);
         self.update_left_from_south(300.0, 200.0);
         self.update_left_from_west(500.0, 200.0);
         self.update_left_from_east(424.0, 320.0);
         self.update_right_from_north(500.0, 400.0);
-        self.update_right_from_south(380.0, 320.0);
+        self.update_right_from_south(380.0, 325.0);
         self.update_right_from_west(375.0, 280.0);
         self.update_right_from_east(300.0, 400.0);
         let (dx, dy) = self.get_movement_vector(vehicles);
         let next_x = self.x + dx;
         let next_y = self.y + dy;
+
+        if self.is_collision(next_x, next_y, vehicles) {
+            self.border_color = sdl2::pixels::Color::RGB(255, 0, 0);
+        } else {
+            self.border_color = sdl2::pixels::Color::RGB(0, 255, 0);
+        }
+
         if self.can_move(next_x, next_y, vehicles) {
             self.x = next_x;
             self.y = next_y;
@@ -242,7 +251,7 @@ impl Vehicle {
     fn slowing_down(&mut self, vehicles: &[Vehicle]) -> f64 {
         let slow_down_distance = 60.0; // Distance to start slowing
         let min_speed = 0.5; // Minimum speed when slowing down
-        let rate = rand::thread_rng().gen_range(0.45..=0.75);
+        let rate = rand::thread_rng().gen_range(0.25..=0.45);
 
         for other in vehicles {
             if !other.is_in_intersection() && self.is_in_intersection() {
@@ -295,19 +304,19 @@ impl Vehicle {
             return false;
         }
 
-        for other in vehicles {
-            if other.is_in_intersection() {
-                if next_x == WEST_STOP_POS && self.direction == 3 {
-                    return false;
-                } else if next_x == EAST_STOP_POS && self.direction == 2 {
-                    return false;
-                } else if next_y == SOUTH_STOP_POS && self.direction == 0 {
-                    return false;
-                } else if next_y == NORTH_STOP_POS && self.direction == 1 {
-                    return false;
-                }
-            }
-        }
+        // for other in vehicles {
+        //     if other.is_in_intersection() {
+        //         if next_x == WEST_STOP_POS && self.direction == 3 {
+        //             return false;
+        //         } else if next_x == EAST_STOP_POS && self.direction == 2 {
+        //             return false;
+        //         } else if next_y == SOUTH_STOP_POS && self.direction == 0 {
+        //             return false;
+        //         } else if next_y == NORTH_STOP_POS && self.direction == 1 {
+        //             return false;
+        //         }
+        //     }
+        // }
 
         true
     }
@@ -497,7 +506,38 @@ impl Vehicle {
             VEHICLE_SIZE,
         );
         canvas.set_draw_color(self.color);
-        canvas.fill_rect(rect)
+        canvas.fill_rect(rect);
+
+        canvas.set_draw_color(self.border_color);
+        canvas.draw_rect(rect)?;
+
+        Ok(())
+    }
+
+    pub fn draw_borders(&self, canvas: &mut Canvas<Window>) -> Result<(), String> {
+        canvas.set_draw_color(sdl2::pixels::Color::RGBA(0, 255, 0, 255));
+        let safety_rect = Rect::new(
+            self.x as i32 - VEHICLE_SIZE as i32 / 2,
+            self.y as i32 - VEHICLE_SIZE as i32 / 2,
+            VEHICLE_SIZE,
+            VEHICLE_SIZE,
+        );
+        canvas.draw_rect(safety_rect)?;
+
+        // let stopping_rect = Rect::new(
+        //     (self.x - STOPPING_DISTANCE) as i32,
+        //     (self.y - STOPPING_DISTANCE) as i32,
+        //     (STOPPING_DISTANCE * 2.0) as u32,
+        //     (STOPPING_DISTANCE * 2.0) as u32,
+        // );
+        // canvas.draw_rect(stopping_rect)?;
+
+        Ok(())
+    }
+
+    pub fn update_border_color(&mut self, r: u8, g: u8, b: u8) -> sdl2::pixels::Color {
+        let border_color = sdl2::pixels::Color::RGB(r, g, b);
+        border_color
     }
 
     pub fn update_glow(&mut self) -> Result<(), String> {
