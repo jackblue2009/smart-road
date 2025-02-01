@@ -71,7 +71,6 @@ impl Vehicle {
             Lane::Right => sdl2::pixels::Color::RGB(255, 255, 0),  // Yellow
             Lane::Middle => sdl2::pixels::Color::RGB(0, 255, 255), // Cyan
             Lane::Left => sdl2::pixels::Color::RGB(200, 150, 200), // Purple
-            _ => unreachable!(),
         };
 
         let init_angle = match direction {
@@ -130,7 +129,7 @@ impl Vehicle {
         }
 
         if self.is_in_intersection() {
-        // println!("Vehicle {} is in intersection at {}X {}Y", self.id, self.x, self.y);
+            println!("Vehicle {} is in intersection at {}X {}Y", self.id, self.x, self.y);
             //self.update_glow();
         }
     }
@@ -309,7 +308,7 @@ impl Vehicle {
         }
 
         // Count vehicles in intersection
-        let mut vehicles_in_intersection = vehicles.iter()
+        let vehicles_in_intersection = vehicles.iter()
             .filter(|v| v.is_in_intersection())
             .count();
 
@@ -389,10 +388,10 @@ impl Vehicle {
                 _ => false,
             };
 
-            println!(
-                "Self pos: ({}, {}), Other pos: ({}, {}), Distance: {}",
-                next_x, next_y, other.x, other.y, distance
-            );
+            // println!(
+            //     "Self pos: ({}, {}), Other pos: ({}, {}), Distance: {}",
+            //     next_x, next_y, other.x, other.y, distance
+            // );
 
             if is_ahead && distance < SAFETY_DISTANCE {
                 return true;
@@ -553,7 +552,7 @@ impl Vehicle {
             VEHICLE_SIZE,
         );
         canvas.set_draw_color(self.color);
-        canvas.fill_rect(rect);
+        let _ = canvas.fill_rect(rect);
 
         canvas.set_draw_color(self.border_color);
         canvas.draw_rect(rect)?;
@@ -598,7 +597,7 @@ impl Vehicle {
         let tip_y = self.y + arrow_length * rad.sin();
 
         canvas.set_draw_color(sdl2::pixels::Color::RGBA(255, 255, 255, 255));
-        canvas.draw_line(
+        let _ = canvas.draw_line(
             Point::new(self.x as i32, self.y as i32),
             Point::new(tip_x as i32, tip_y as i32),
         );

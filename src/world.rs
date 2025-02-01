@@ -1,12 +1,10 @@
-use crate::road::{ROAD_HEIGHT, ROAD_WIDTH};
-// use crate::traffic_light::TrafficLight;
+use crate::road::{ROAD_WIDTH};
 use crate::vehicle::Vehicle;
 use rand::Rng;
-use sdl2::keyboard::Keycode;
 use sdl2::rect::Rect;
 use sdl2::render::Canvas;
 use sdl2::video::Window;
-use std::f64::consts::PI;
+// use std::f64::consts::PI;
 use std::time::{Duration, Instant};
 
 use crate::vehicle::Lane;
@@ -27,6 +25,7 @@ pub struct World {
     last_vehicle_spawn_time: Instant,
     vehicle_spawn_cooldown: Duration,
     max_vehicles: usize,
+    vehicle_passed: u32,
 }
 
 #[allow(dead_code)]
@@ -36,8 +35,9 @@ impl World {
             vehicles: Vec::new(),
             // traffic_lights,
             last_vehicle_spawn_time: Instant::now(),
-            vehicle_spawn_cooldown: Duration::from_millis(200),
+            vehicle_spawn_cooldown: Duration::from_millis(350),
             max_vehicles: 10,
+            vehicle_passed: 0,
         }
     }
 
@@ -51,7 +51,14 @@ impl World {
             }
         }
 
+        let finished_count = self.vehicles.iter().filter(|v| v.is_finished()).count();
+        self.vehicle_passed += finished_count as u32;
+        //println!("Vehicles passed: {}", self.vehicle_passed);
         self.vehicles.retain(|v| !v.is_finished());
+    }
+
+    pub fn get_vehicles_passed(&self) -> u32 {
+        self.vehicle_passed
     }
 
     pub fn spawn_dir(&mut self, dir: u8) {

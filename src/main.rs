@@ -10,7 +10,8 @@ mod road;
 mod vehicle;
 mod world;
 
-use world::World;
+pub use world::World;
+pub use smart_road::draw_panel;
 
 fn main() -> Result<(), String> {
     let sdl_context = sdl2::init()?;
@@ -34,7 +35,23 @@ fn main() -> Result<(), String> {
                 | Event::KeyDown {
                     keycode: Some(Keycode::Escape),
                     ..
-                } => break 'running,
+                } => {
+                    draw_panel(&mut canvas, world.get_vehicles_passed());
+                    // Wait for user input to close
+                    loop {
+                        for event in event_pump.poll_iter() {
+                            match event {
+                                Event::Quit { .. } |
+                                Event::KeyDown { keycode: Some(Keycode::Return), .. } => {
+                                    break 'running;
+                                }
+                                _ => {}
+                            }
+                        }
+                        ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
+                    }
+                    //break 'running
+                },
                     Event::KeyDown {
                         keycode: Some(keycode),
                         ..
