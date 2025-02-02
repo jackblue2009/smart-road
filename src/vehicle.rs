@@ -21,12 +21,12 @@ const SOUTH_STOP_POS: f64 = 440.0;
 const WEST_STOP_POS: f64 = 260.0;
 const EAST_STOP_POS: f64 = 540.0;
 
-#[allow(dead_code)]
-const TURNING_RADIUS: f64 = 30.0;
-#[allow(dead_code)]
-const INTERSECTION_CENTER_X: f64 = 400.0;
-#[allow(dead_code)]
-const INTERSECTION_CENTER_Y: f64 = 300.0;
+// #[allow(dead_code)]
+// const TURNING_RADIUS: f64 = 30.0;
+// #[allow(dead_code)]
+// const INTERSECTION_CENTER_X: f64 = 400.0;
+// #[allow(dead_code)]
+// const INTERSECTION_CENTER_Y: f64 = 300.0;
 
 // Add this new enum at the top of the file
 #[derive(Clone, Copy, PartialEq)]
@@ -43,7 +43,6 @@ pub struct Vehicle {
     pub y: f64,
     pub angle: f64,
     pub direction: u8,
-    // route: u8,
     pub lane: Lane,
     pub color: sdl2::pixels::Color,
     pub border_color: sdl2::pixels::Color,
@@ -87,13 +86,47 @@ impl Vehicle {
             y: y as f64,
             angle: init_angle,
             direction,
-            // route,
             lane,
             color,
             border_color: sdl2::pixels::Color::RGB(0, 255, 0),
             intersection_entry_time: None,
         }
     }
+
+    // fn check_intersection_priority(&self, vehicles: &[Vehicle]) -> bool {
+    //     let approaching_intersection = match self.direction {
+    //         0 => self.y <= 198.0 + 50.0 && self.y > 198.0,  // North
+    //         1 => self.y >= 406.0 - 50.0 && self.y < 406.0,  // South
+    //         2 => self.x <= 304.0 + 50.0 && self.x > 304.0,  // West
+    //         3 => self.x >= 502.0 - 50.0 && self.x < 502.0,  // East
+    //         _ => false,
+    //     };
+
+    //     // if !approaching_intersection {
+    //     //     println!("Vehicle {} is not approaching intersection", self.id);
+    //     //     return false;
+    //     // }
+
+    //     for other in vehicles {
+    //         if std::ptr::eq(self, other) {
+    //             continue;
+    //         }
+
+    //         if other.is_in_intersection() {
+    //             println!("Vehicle {} is in intersection or has priority", self.id);
+    //             return false;
+    //         }
+
+    //         if let (Some(self_time), Some(other_time)) = (self.intersection_entry_time, other.intersection_entry_time) {
+    //             if other_time < self_time {
+    //                 println!("Vehicle {} has priority over vehicle {}", self.id, other.id);
+    //                 return false;
+    //             }
+    //         }
+    //     }
+
+    //     true
+    // }
 
     /// Updates vehicle position based on current state and surrounding vehicles
     /// 
@@ -113,25 +146,34 @@ impl Vehicle {
         self.update_right_from_west(375.0, 280.0);
         self.update_right_from_east(300.0, 400.0);
 
+        // let has_priority = self.check_intersection_priority(vehicles);
+        // self.has_priority = has_priority;
+
         let (dx, dy) = self.get_movement_vector(vehicles);
         let next_x = self.x + dx;
         let next_y = self.y + dy;
 
         if self.is_collision(next_x, next_y, vehicles) {
             self.border_color = sdl2::pixels::Color::RGB(255, 0, 0);
-        } else {
-            self.border_color = sdl2::pixels::Color::RGB(0, 255, 0);
         }
+
+        // if !has_priority {
+        //     self.border_color = sdl2::pixels::Color::RGB(255, 165, 0);  // Orange for waiting
+        //     return;
+        // }
 
         if self.can_move(next_x, next_y, vehicles) {
             self.x = next_x;
             self.y = next_y;
             //println!("Vehicle {} moved to {}X {}Y", self.id, self.x, self.y);
+            self.border_color = sdl2::pixels::Color::RGB(0, 255, 0);
         }
 
         if self.is_in_intersection() {
+            self.intersection_entry_time = Some(std::time::Instant::now());
             println!("Vehicle {} is in intersection at {}X {}Y", self.id, self.x, self.y);
-            //self.update_glow();
+        } else if !self.is_in_intersection() {
+            self.intersection_entry_time = None;
         }
     }
 
@@ -252,30 +294,52 @@ impl Vehicle {
         (dx, dy)
     }
 
+    // pub fn get_velocity(&mut self, vehicles: &[Vehicle]) -> f64 {
+    //     let mut max_velocity = 0.0;
+
+    //     for vehicle in vehicles {
+    //         // Get current speed from slowing_down logic
+    //         let current_speed = match vehicle.is_in_intersection() {
+    //             true => VEHICLE_SPEED * rand::thread_rng().gen_range(0.15..=0.95),
+    //             false => VEHICLE_SPEED
+    //         };
+
+    //         // Calculate actual velocity components using angle
+    //         let rad = vehicle.angle * PI / 180.0;
+    //         let dx = current_speed * rad.cos();
+    //         let dy = current_speed * rad.sin();
+
+    //         // Get total velocity magnitude
+    //         let velocity = (dx * dx + dy * dy).sqrt();
+
+    //         if velocity > max_velocity {
+    //             max_velocity = velocity;
+    //         }
+    //     }
+
+    //     max_velocity
+    // }
+
     pub fn get_velocity(&mut self, vehicles: &[Vehicle]) -> f64 {
-        let mut max_velocity = 0.0;
-
-        for vehicle in vehicles {
-            // Get current speed from slowing_down logic
-            let current_speed = match vehicle.is_in_intersection() {
-                true => VEHICLE_SPEED * rand::thread_rng().gen_range(0.15..=0.95),
-                false => VEHICLE_SPEED
-            };
-
-            // Calculate actual velocity components using angle
-            let rad = vehicle.angle * PI / 180.0;
-            let dx = current_speed * rad.cos();
-            let dy = current_speed * rad.sin();
-
-            // Get total velocity magnitude
-            let velocity = (dx * dx + dy * dy).sqrt();
-
-            if velocity > max_velocity {
-                max_velocity = velocity;
-            }
+        let slow_down_factor = 0.3; // Reduces speed to 30% when near intersection
+        let approach_buffer = 50.0;  // Distance before intersection to start slowing
+        // Check if approaching intersection based on direction
+        let should_slow_down = match self.direction {
+            2 => self.x <= 304.0 + approach_buffer && self.x > 304.0, // West inbound
+            3 => self.x >= 502.0 - approach_buffer && self.x < 502.0, // East inbound
+            0 => self.y <= 198.0 + approach_buffer && self.y > 198.0, // North inbound
+            1 => self.y >= 406.0 - approach_buffer && self.y < 406.0, // South inbound
+            _ => false,
+        };
+        let base_speed = match self.is_in_intersection() {
+            true => VEHICLE_SPEED * rand::thread_rng().gen_range(0.15..=0.95),
+            false => VEHICLE_SPEED
+        };
+        if should_slow_down {
+            base_speed * slow_down_factor
+        } else {
+            base_speed
         }
-
-        max_velocity
     }
 
     // fn slowing_down(&mut self, vehicles: &[Vehicle]) -> f64 {
@@ -354,6 +418,26 @@ impl Vehicle {
             return false;
         }
 
+        // Define intersection boundaries
+        let intersection_left = 304.0;
+        let intersection_right = 502.0;
+        let intersection_top = 198.0;
+        let intersection_bottom = 406.0;
+
+        // Check if vehicle has passed the intersection
+        let has_passed_intersection = match self.direction {
+            0 => self.y < intersection_top,     // Northbound
+            1 => self.y > intersection_bottom,  // Southbound
+            2 => self.x < intersection_left,    // Westbound
+            3 => self.x > intersection_right,   // Eastbound
+            _ => false
+        };
+
+        // If vehicle has passed intersection, ignore intersection rules
+        if has_passed_intersection {
+            return true;
+        }
+
         // Count vehicles in intersection
         let vehicles_in_intersection = vehicles.iter()
             .filter(|v| v.is_in_intersection())
@@ -372,36 +456,44 @@ impl Vehicle {
                 }
             }
         }
+        // for other in vehicles {
+        //     if vehicles_in_intersection >= 3 && !self.is_in_intersection() {
+        //         if next_x == WEST_STOP_POS && self.direction == 3 {
+        //             return false;
+        //         } else if next_x == EAST_STOP_POS && self.direction == 2 {
+        //             return false;
+        //         } else if next_y == SOUTH_STOP_POS && self.direction == 0 {
+        //             return false;
+        //         } else if next_y == NORTH_STOP_POS && self.direction == 1 {
+        //             return false;
+        //         }
+        //     }
+        // }
 
-        for other in vehicles {
-            if std::ptr::eq(self, other) {
-                continue;
-            }
+        // for other in vehicles {
+        //     if std::ptr::eq(self, other) {
+        //         continue;
+        //     }
 
-            let other_in_intersection = other.x > 304.0 
-                && other.x < 502.0 
-                && other.y > 198.0 
-                && other.y < 406.0;
+        //     let other_in_intersection = other.is_in_intersection();
+        //     let self_in_intersection = self.is_in_intersection();
 
-            let self_in_intersection = self.x > 304.0 
-                && self.x < 502.0 
-                && self.y > 198.0 
-                && self.y < 406.0;
+        //     // Compare entry times when both vehicles have timestamps
+        //     if let (Some(self_time), Some(other_time)) = (self.intersection_entry_time, other.intersection_entry_time) {
+        //         // If other vehicle entered first and is still in intersection, yield
+        //         if other_time < self_time && other_in_intersection {
+        //             return false;
+        //         }
+        //     }
 
-            if let (Some(self_time), Some(other_time)) = (self.intersection_entry_time, other.intersection_entry_time) {
-                if other_time < self_time && other_in_intersection {
-                    return false;
-                }
-            }
-
-            // Stop if approaching intersection and another vehicle is already in it
-            if !self_in_intersection && other_in_intersection {
-                let distance = ((next_x - other.x).powi(2) + (next_y - other.y).powi(2)).sqrt();
-                if distance < SAFETY_DISTANCE {
-                    return false;
-                }
-            }
-        }
+        //     // Prevent new entry if vehicle already in intersection
+        //     if !self_in_intersection && other_in_intersection {
+        //         let distance = ((next_x - other.x).powi(2) + (next_y - other.y).powi(2)).sqrt();
+        //         if distance < SAFETY_DISTANCE {
+        //             return false;
+        //         }
+        //     }
+        // }
 
         true
     }
@@ -428,10 +520,10 @@ impl Vehicle {
 
             // Check if vehicle is ahead in the same direction
             let is_ahead = match self.direction {
-                0 => other.y < self.y && (other.x - self.x).abs() < VEHICLE_SIZE as f64, // Moving north
-                1 => other.y > self.y && (other.x - self.x).abs() < VEHICLE_SIZE as f64, // Moving south
-                2 => other.x < self.x && (other.y - self.y).abs() < VEHICLE_SIZE as f64, // Moving west
-                3 => other.x > self.x && (other.y - self.y).abs() < VEHICLE_SIZE as f64, // Moving east
+                0 => other.y < self.y && (other.x - self.x).abs() < VEHICLE_SIZE as f64 * 1.0, // Moving north
+                1 => other.y > self.y && (other.x - self.x).abs() < VEHICLE_SIZE as f64 * 1.0, // Moving south
+                2 => other.x < self.x && (other.y - self.y).abs() < VEHICLE_SIZE as f64 * 1.0, // Moving west
+                3 => other.x > self.x && (other.y - self.y).abs() < VEHICLE_SIZE as f64 * 1.0, // Moving east
                 _ => false,
             };
 
@@ -449,25 +541,6 @@ impl Vehicle {
             }
         }
         false
-    }
-
-    /// Determines if vehicle is in traffic light zone
-    /// 
-    /// # Arguments
-    /// * `x` - Current x coordinate
-    /// * `y` - Current y coordinate
-    /// 
-    /// # Returns
-    /// Boolean indicating if vehicle is in traffic light decision zone
-    fn is_at_traffic_light(&self, x: f64, y: f64) -> bool {
-        let light_zone = ROAD_WIDTH as f64 / 2.0;
-        match self.direction {
-            0 => y <= 300.0 + light_zone && y > 300.0 - light_zone, // Northbound
-            1 => y >= 300.0 - light_zone && y < 300.0 + light_zone, // Southbound
-            2 => x <= 400.0 + light_zone && x > 400.0 - light_zone, // Westbound
-            3 => x >= 400.0 - light_zone && x < 400.0 + light_zone, // Eastbound
-            _ => unreachable!(),
-        }
     }
 
     /// Checks if vehicle is within intersection boundaries
@@ -495,86 +568,6 @@ impl Vehicle {
 
         // is_in
     }
-
-    /// Determines if vehicle is approaching intersection
-    ///
-    /// # Returns
-    /// Boolean indicating if vehicle is within approach zone
-    /// (2 lane widths before intersection)
-    fn is_approaching_intersection(&self) -> bool {
-        let lane_width = ROAD_WIDTH as f64 / 6.0; // Each lane is 40 units wide
-        let approach_distance = lane_width * 2.0;  // Two lane widths of approach distance
-
-        match self.direction {
-            0 => self.y > 300.0 + ROAD_WIDTH as f64 && self.y < 300.0 + ROAD_WIDTH as f64 + approach_distance, // Northbound
-            1 => self.y < 300.0 - ROAD_WIDTH as f64 && self.y > 300.0 - ROAD_WIDTH as f64 - approach_distance, // Southbound
-            2 => self.x > 400.0 + ROAD_WIDTH as f64 && self.x < 400.0 + ROAD_WIDTH as f64 + approach_distance, // Westbound
-            3 => self.x < 400.0 - ROAD_WIDTH as f64 && self.x > 400.0 - ROAD_WIDTH as f64 - approach_distance, // Eastbound
-            _ => false,
-        }
-    }
-
-    /// Updates vehicle angle for turning movements in intersection
-    ///
-    /// Modifies vehicle angle based on:
-    /// - Current direction
-    /// - Turn speed (2.0 degrees per update)
-    /// - Normalizes final angle to -180 to 180 degree range
-
-    // fn update_angle(&mut self) {
-    //     if self.direction == 0 && self.lane == Lane::Left {
-    //         if self.x == 500.0 {
-    //             self.angle = 90.0;
-    //         }
-    //     }
-    //     if self.direction == 0 && self.lane == Lane::Right {
-    //         if self.x == 300.0 {
-    //             self.angle = -90.0;
-    //         }
-    //     }
-    //     if self.direction == 0 && self.lane == Lane::Middle {
-    //         self.angle = -90.0;
-    //     }
-    //     if self.direction == 1 && self.lane == Lane::Left {
-    //         if self.x == 300.0 {
-    //             self.angle = 90.0;
-    //         }
-    //     }
-    //     if self.direction == 1 && self.lane == Lane::Right {
-    //         if self.x == 500.0 {
-    //             self.angle = -90.0;
-    //         }
-    //     }
-    //     if self.direction == 1 && self.lane == Lane::Middle {
-    //         self.angle = 90.0;
-    //     }
-    //     if self.direction == 2 && self.lane == Lane::Left {
-    //         if self.y == 500.0 {
-    //             self.angle = 0.0;
-    //         }
-    //     }
-    //     if self.direction == 2 && self.lane == Lane::Right {
-    //         if self.y == 300.0 {
-    //             self.angle = 180.0;
-    //         }
-    //     }
-    //     if self.direction == 2 && self.lane == Lane::Middle {
-    //         self.angle = 0.0;
-    //     }
-    //     if self.direction == 3 && self.lane == Lane::Left {
-    //         if self.y == 300.0 {
-    //             self.angle = 0.0;
-    //         }
-    //     }
-    //     if self.direction == 3 && self.lane == Lane::Right {
-    //         if self.y == 500.0 {
-    //             self.angle = 180.0;
-    //         }
-    //     }
-    //     if self.direction == 3 && self.lane == Lane::Middle {
-    //         self.angle = 0.0;
-    //     }
-    // }
 
     /// Checks if vehicle has completed its journey
     /// 
