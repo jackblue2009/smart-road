@@ -26,7 +26,8 @@ fn main() -> Result<(), String> {
     let mut canvas = window.into_canvas().build().map_err(|e| e.to_string())?;
     let mut event_pump = sdl_context.event_pump()?;
 
-    let mut world = World::new();
+    let sdl_context = sdl2::init().unwrap();
+    let mut world = World::new(&sdl_context);
 
     'running: loop {
         for event in event_pump.poll_iter() {
