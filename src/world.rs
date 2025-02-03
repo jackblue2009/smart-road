@@ -70,7 +70,7 @@ impl World {
 
         sdl2::mixer::open_audio(44100, AUDIO_S16LSB, DEFAULT_CHANNELS, 1024).unwrap();
         let _mixer_context = sdl2::mixer::init(InitFlag::MP3).unwrap();
-        sdl2::mixer::allocate_channels(4);
+        sdl2::mixer::allocate_channels(8);
         let mut spawn_sound = sdl2::mixer::Chunk::from_file("./src/assets/car-spawn.mp3").unwrap();
         spawn_sound.set_volume(16); // Set volume between 0-128, where 128 is max volume
 
@@ -80,8 +80,8 @@ impl World {
             // audio_subsystem,
             // device,
             last_vehicle_spawn_time: Instant::now(),
-            vehicle_spawn_cooldown: Duration::from_millis(380),
-            max_vehicles: 14,
+            vehicle_spawn_cooldown: Duration::from_millis(400),
+            max_vehicles: 12,
             vehicle_passed: 0,
         }
     }

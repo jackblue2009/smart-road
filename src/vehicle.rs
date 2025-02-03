@@ -13,8 +13,8 @@ static VEHICLE_ID_COUNTER: AtomicU32 = AtomicU32::new(1);
 
 const VEHICLE_SIZE: u32 = 30;
 const VEHICLE_SPEED: f64 = 2.0;
-const SAFETY_DISTANCE: f64 = 40.0;
-const STOPPING_DISTANCE: f64 = 30.0; // Distance at which to start slowing down
+const SAFETY_DISTANCE: f64 = 35.0;
+const STOPPING_DISTANCE: f64 = 25.0; // Distance at which to start slowing down
 
 const NORTH_STOP_POS: f64 = 158.0;
 const SOUTH_STOP_POS: f64 = 440.0;
@@ -323,6 +323,7 @@ impl Vehicle {
     pub fn get_velocity(&mut self, vehicles: &[Vehicle]) -> f64 {
         let slow_down_factor = 0.3; // Reduces speed to 30% when near intersection
         let approach_buffer = 50.0;  // Distance before intersection to start slowing
+        let rate = rand::thread_rng().gen_range(0.55..=3.95);
         // Check if approaching intersection based on direction
         let should_slow_down = match self.direction {
             2 => self.x <= 304.0 + approach_buffer && self.x > 304.0, // West inbound
@@ -332,9 +333,10 @@ impl Vehicle {
             _ => false,
         };
         let base_speed = match self.is_in_intersection() {
-            true => VEHICLE_SPEED * rand::thread_rng().gen_range(0.15..=0.95),
-            false => VEHICLE_SPEED
+            true => VEHICLE_SPEED * rand::thread_rng().gen_range(0.55..=1.45),
+            false => VEHICLE_SPEED * rate
         };
+        // let base_speed = rate;
         if should_slow_down {
             base_speed * slow_down_factor
         } else {
@@ -418,6 +420,31 @@ impl Vehicle {
             return false;
         }
 
+        for other in vehicles {
+            if std::ptr::eq(self, other) {
+                continue;
+            }
+
+            // Determine if vehicle is ahead based on direction
+            let is_ahead = match self.direction {
+                0 => other.y < self.y && (other.x - self.x).abs() < VEHICLE_SIZE as f64, // North
+                1 => other.y > self.y && (other.x - self.x).abs() < VEHICLE_SIZE as f64, // South
+                2 => other.x < self.x && (other.y - self.y).abs() < VEHICLE_SIZE as f64, // West
+                3 => other.x > self.x && (other.y - self.y).abs() < VEHICLE_SIZE as f64, // East
+                _ => false,
+            };
+
+            if is_ahead {
+                let dx = next_x - other.x;
+                let dy = next_y - other.y;
+                let distance = (dx * dx + dy * dy).sqrt();
+
+                if distance < SAFETY_DISTANCE {
+                    return false;
+                }
+            }
+        }
+
         // Define intersection boundaries
         let intersection_left = 304.0;
         let intersection_right = 502.0;
@@ -438,13 +465,16 @@ impl Vehicle {
             return true;
         }
 
+        // Check if current vehicle is going straight
+        let is_going_straight = self.lane == Lane::Right;
+
         // Count vehicles in intersection
         let vehicles_in_intersection = vehicles.iter()
             .filter(|v| v.is_in_intersection())
             .count();
 
         for other in vehicles {
-            if vehicles_in_intersection >= 3 && !self.is_in_intersection() {
+            if vehicles_in_intersection >= 2 && !self.is_in_intersection() {
                 if next_x == WEST_STOP_POS && self.direction == 3 {
                     return false;
                 } else if next_x == EAST_STOP_POS && self.direction == 2 {
@@ -455,6 +485,25 @@ impl Vehicle {
                     return false;
                 }
             }
+            // if other.is_in_intersection() && !self.is_in_intersection() {
+            //     let other_going_straight = other.lane == Lane::Right;
+            //     // If other vehicle is turning and current vehicle is going straight
+            //     if !other_going_straight && is_going_straight {
+            //         return true; // Allow straight-going vehicle to proceed
+            //     }
+            //     // If other vehicle is going straight or has higher priority
+            //     if other_going_straight || vehicles_in_intersection >= 3 {
+            //         if next_x == WEST_STOP_POS && self.direction == 3 {
+            //             return false;
+            //         } else if next_x == EAST_STOP_POS && self.direction == 2 {
+            //             return false;
+            //         } else if next_y == SOUTH_STOP_POS && self.direction == 0 {
+            //             return false;
+            //         } else if next_y == NORTH_STOP_POS && self.direction == 1 {
+            //             return false;
+            //         }
+            //     }
+            // }
         }
         // for other in vehicles {
         //     if vehicles_in_intersection >= 3 && !self.is_in_intersection() {
@@ -603,14 +652,14 @@ impl Vehicle {
     }
 
     pub fn draw_borders(&self, canvas: &mut Canvas<Window>) -> Result<(), String> {
-        canvas.set_draw_color(sdl2::pixels::Color::RGBA(0, 255, 0, 255));
-        let safety_rect = Rect::new(
-            self.x as i32 - VEHICLE_SIZE as i32 / 2,
-            self.y as i32 - VEHICLE_SIZE as i32 / 2,
-            VEHICLE_SIZE,
-            VEHICLE_SIZE,
-        );
-        canvas.draw_rect(safety_rect)?;
+        // canvas.set_draw_color(sdl2::pixels::Color::RGBA(0, 255, 0, 255));
+        // let safety_rect = Rect::new(
+        //     self.x as i32 - VEHICLE_SIZE as i32 / 2,
+        //     self.y as i32 - VEHICLE_SIZE as i32 / 2,
+        //     VEHICLE_SIZE,
+        //     VEHICLE_SIZE,
+        // );
+        // canvas.draw_rect(safety_rect)?;
 
         // let stopping_rect = Rect::new(
         //     (self.x - STOPPING_DISTANCE) as i32,
@@ -619,6 +668,36 @@ impl Vehicle {
         //     (STOPPING_DISTANCE * 2.0) as u32,
         // );
         // canvas.draw_rect(stopping_rect)?;
+
+        // Draw safety distance boundary
+        canvas.set_draw_color(sdl2::pixels::Color::RGBA(255, 165, 0, 100));
+        let safety_rect = Rect::new(
+            (self.x - SAFETY_DISTANCE) as i32,
+            (self.y - SAFETY_DISTANCE) as i32,
+            (SAFETY_DISTANCE * 2.0) as u32,
+            (SAFETY_DISTANCE * 2.0) as u32,
+        );
+        canvas.draw_rect(safety_rect)?;
+
+        // Draw stopping distance boundary
+        canvas.set_draw_color(sdl2::pixels::Color::RGBA(255, 0, 0, 100));
+        let stopping_rect = Rect::new(
+            (self.x - STOPPING_DISTANCE) as i32,
+            (self.y - STOPPING_DISTANCE) as i32,
+            (STOPPING_DISTANCE * 2.0) as u32,
+            (STOPPING_DISTANCE * 2.0) as u32,
+        );
+        canvas.draw_rect(stopping_rect)?;
+
+        // Draw actual vehicle collision boundary
+        canvas.set_draw_color(sdl2::pixels::Color::RGBA(0, 255, 0, 255));
+        let vehicle_rect = Rect::new(
+            self.x as i32 - VEHICLE_SIZE as i32,
+            self.y as i32 - VEHICLE_SIZE as i32,
+            VEHICLE_SIZE * 2,
+            VEHICLE_SIZE * 2,
+        );
+        canvas.draw_rect(vehicle_rect)?;
 
         Ok(())
     }
