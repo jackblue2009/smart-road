@@ -80,7 +80,7 @@ impl World {
             // audio_subsystem,
             // device,
             last_vehicle_spawn_time: Instant::now(),
-            vehicle_spawn_cooldown: Duration::from_millis(400),
+            vehicle_spawn_cooldown: Duration::from_millis(750),
             max_vehicles: 12,
             vehicle_passed: 0,
         }
