@@ -27,6 +27,9 @@ fn main() -> Result<(), String> {
     let mut event_pump = sdl_context.event_pump()?;
 
     let sdl_context = sdl2::init().unwrap();
+    // Initialize the TTF context here, and keep it alive for the whole program.
+    let ttf_context = sdl2::ttf::init().map_err(|e| e.to_string())?;
+
     let mut world = World::new(&sdl_context);
 
     'running: loop {
@@ -37,7 +40,8 @@ fn main() -> Result<(), String> {
                     keycode: Some(Keycode::Escape),
                     ..
                 } => {
-                    draw_panel(&mut canvas, world.get_vehicles_passed());
+                    // Pass the ttf_context to draw_panel.
+                    draw_panel(&mut canvas, world.get_vehicles_passed(), &ttf_context);
                     // Wait for user input to close
                     loop {
                         for event in event_pump.poll_iter() {
@@ -53,19 +57,19 @@ fn main() -> Result<(), String> {
                     }
                     //break 'running
                 },
-                    Event::KeyDown {
-                        keycode: Some(keycode),
-                        ..
-                    } => {
-                        match keycode {
-                            Keycode::Down => world.spawn_dir(1),
-                            Keycode::Up => world.spawn_dir(0),
-                            Keycode::Right => world.spawn_dir(3),
-                            Keycode::Left => world.spawn_dir(2),
-                            Keycode::R => world.auto_spawn(),
-                            _ => {}
-                        }
+                Event::KeyDown {
+                    keycode: Some(keycode),
+                    ..
+                } => {
+                    match keycode {
+                        Keycode::Down => world.spawn_dir(1),
+                        Keycode::Up => world.spawn_dir(0),
+                        Keycode::Right => world.spawn_dir(3),
+                        Keycode::Left => world.spawn_dir(2),
+                        Keycode::R => world.auto_spawn(),
+                        _ => {}
                     }
+                }
                 _ => {}
             }
         }

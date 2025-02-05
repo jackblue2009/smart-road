@@ -2,10 +2,10 @@ use sdl2::rect::Rect;
 use sdl2::render::Canvas;
 use sdl2::video::Window;
 use sdl2::render::BlendMode;
-//use sdl2::ttf::Sdl2TtfContext;
+use sdl2::ttf::Sdl2TtfContext; // Import Sdl2TtfContext
 
-pub fn draw_panel(canvas: &mut Canvas<Window>, passed_vehicles: u32) {
-    let ttf_context = sdl2::ttf::init().unwrap();
+pub fn draw_panel(canvas: &mut Canvas<Window>, passed_vehicles: u32, ttf_context: &Sdl2TtfContext) {
+    // Load the fonts.  The context is passed in, so it's valid.
     let title_font = ttf_context.load_font("./src/assets/fonts/Roboto-Bold.ttf", 32).unwrap();
     let regular_font = ttf_context.load_font("./src/assets/fonts/Roboto-Regular.ttf", 24).unwrap();
 
@@ -59,5 +59,6 @@ pub fn draw_panel(canvas: &mut Canvas<Window>, passed_vehicles: u32) {
     // Drawing the border
     canvas.set_draw_color(border_color);
     let _ = canvas.draw_rect(panel_rect);
-    canvas.present();
+    canvas.present(); // Important: Present the canvas to show changes
+
 }
