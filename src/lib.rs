@@ -10,6 +10,7 @@ pub fn draw_panel(canvas: &mut Canvas<Window>,
     min_velocity: f64,
     max_time: String,
     min_time: String,
+    close_calls: u32,
     ttf_context: &Sdl2TtfContext) {
     // Load the fonts.  The context is passed in, so it's valid.
     let title_font = ttf_context.load_font("./src/assets/fonts/Roboto-Bold.ttf", 32).unwrap();
@@ -99,7 +100,7 @@ pub fn draw_panel(canvas: &mut Canvas<Window>,
     canvas.copy(&min_time_texture, None, Some(min_time_rect)).unwrap();
 
     // Drawing the close calls when two vehicles were close to each (less than safe distance) other text
-    let close_calls_text = format!("Close calls when two vehicles were close to each other (less than safe distance): {}", 0);
+    let close_calls_text = format!("Close calls when two vehicles were close to each other (less than safe distance): {}", close_calls);
     let close_calls_surface = regular_font
         .render(&close_calls_text)
         .blended(title_color)

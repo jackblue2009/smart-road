@@ -46,6 +46,7 @@ fn main() -> Result<(), String> {
                     world.get_min_velocity(),
                     world.max_vehicles_time(),
                     world.min_vehicles_time(),
+                    world.get_total_close_call_count(),
                     &ttf_context);
                     // Wait for user input to close
                     loop {

@@ -40,17 +40,19 @@ pub struct Vehicle {
     /// When a vehicle first enters the intersection, we record the time.
     pub intersection_entry_time: Option<std::time::Instant>,
     pub spawn_time: std::time::Instant,
+    pub close_call_count: u32,
+    pub is_in_collision: bool,
 }
 
 impl Vehicle {
     /// Creates a new vehicle instance with specified starting position, direction and lane.
-    /// 
+    ///
     /// # Arguments
     /// * `x` - Initial x coordinate position
-    /// * `y` - Initial y coordinate position  
+    /// * `y` - Initial y coordinate position
     /// * `direction` - Vehicle direction (0: North, 1: South, 2: West, 3: East)
     /// * `lane` - Lane type (Middle: straight, Right: right turn, Left: left turn)
-    /// 
+    ///
     /// # Returns
     /// New Vehicle instance with color based on the lane:
     /// - Yellow for right turns
@@ -82,6 +84,8 @@ impl Vehicle {
             border_color: sdl2::pixels::Color::RGB(0, 255, 0),
             intersection_entry_time: None,
             spawn_time: std::time::Instant::now(),
+            close_call_count: 0,
+            is_in_collision: false,
         }
     }
 
@@ -162,7 +166,14 @@ impl Vehicle {
         let next_y = self.y + dy;
 
         if self.is_collision(next_x, next_y, vehicles) {
+            if !self.is_in_collision { // Increment only if not already in collision
+                self.close_call_count += 1;
+                println!("Close call! {} at ({}, {})", self.close_call_count, self.x, self.y);
+                self.is_in_collision = true; // Set collision state to true
+            }
             self.border_color = sdl2::pixels::Color::RGB(255, 0, 0);
+        } else {
+            self.is_in_collision = false; // Reset collision state to false
         }
 
         if self.can_move(next_x, next_y, vehicles) {
@@ -296,7 +307,7 @@ impl Vehicle {
     /// Determines if the vehicle can move safely to the next position.
     ///
     /// Checks for imminent collisions or blocking positions (stop positions).
-    fn can_move(&self, next_x: f64, next_y: f64, vehicles: &[Vehicle]) -> bool {
+    fn can_move(&mut self, next_x: f64, next_y: f64, vehicles: &[Vehicle]) -> bool {
         if self.is_collision(next_x, next_y, vehicles) {
             return false;
         }
@@ -306,23 +317,25 @@ impl Vehicle {
             .filter(|v| {
                 v.is_in_intersection()
             }).count();
-        for _other in vehicles {
+        for other in vehicles {
             //println!("Vehicles in intersection: {}", vehicles_in_intersection);
             //println!("Checking for blocking positions...");
-            if vehicles_in_intersection >= 3 && !self.is_in_intersection() {
-                //println!("Vehicles in intersection: {}", vehicles_in_intersection);
-                if next_x == WEST_STOP_POS && self.direction == 3 {
-                    println!("Blocking position at West Stop Position");
-                    return false;
-                } else if next_x == EAST_STOP_POS && self.direction == 2 {
-                    println!("Blocking position at East Stop Position");
-                    return false;
-                } else if next_y == SOUTH_STOP_POS && self.direction == 0 {
-                    println!("Blocking position at South Stop Position");
-                    return false;
-                } else if next_y == NORTH_STOP_POS && self.direction == 1 {
-                    println!("Blocking position at North Stop Position");
-                    return false;
+            if vehicles_in_intersection >= 3 {
+                if other.is_in_intersection() && !self.is_in_intersection() {
+                    //println!("Vehicles in intersection: {}", vehicles_in_intersection);
+                    if next_x == WEST_STOP_POS && self.direction == 3 {
+                        println!("Blocking position at West Stop Position");
+                        return false;
+                    } else if next_x == EAST_STOP_POS && self.direction == 2 {
+                        println!("Blocking position at East Stop Position");
+                        return false;
+                    } else if next_y == SOUTH_STOP_POS && self.direction == 0 {
+                        println!("Blocking position at South Stop Position");
+                        return false;
+                    } else if next_y == NORTH_STOP_POS && self.direction == 1 {
+                        println!("Blocking position at North Stop Position");
+                        return false;
+                    }
                 }
             }
         }
@@ -345,7 +358,7 @@ impl Vehicle {
     /// Checks for potential collisions with other vehicles.
     ///
     /// If another vehicle is within the safety or stopping distance ahead, a collision is assumed.
-    fn is_collision(&self, next_x: f64, next_y: f64, vehicles: &[Vehicle]) -> bool {
+    fn is_collision(&mut self, next_x: f64, next_y: f64, vehicles: &[Vehicle]) -> bool {
         for other in vehicles {
             if std::ptr::eq(self, other) {
                 continue;
@@ -361,6 +374,22 @@ impl Vehicle {
                 3 => other.x > self.x && (other.y - self.y).abs() < VEHICLE_SIZE as f64,
                 _ => false,
             };
+
+            // Check if vehicles are moving in the same direction
+            let same_direction = self.direction == other.direction;
+
+            // Only count close calls for vehicles moving in different directions
+            if !same_direction && distance < SAFETY_DISTANCE {
+                if !self.is_in_collision { // Increment only if not already in collision
+                    self.close_call_count += 1;
+                    println!("Close call! {} at ({}, {})", self.close_call_count, self.x, self.y);
+                    self.is_in_collision = true; // Set collision state to true
+                }
+            }
+
+            if !same_direction && distance < STOPPING_DISTANCE {
+                return true;
+            }
 
             if is_ahead && distance < SAFETY_DISTANCE {
                 return true;

@@ -36,7 +36,7 @@ impl World {
             vehicles: Vec::new(),
             spawn_sound,
             last_vehicle_spawn_time: Instant::now(),
-            vehicle_spawn_cooldown: Duration::from_millis(750),
+            vehicle_spawn_cooldown: Duration::from_millis(650),
             max_vehicles: 12,
             vehicle_passed: 0,
             max_velocity: 0.0,
@@ -74,6 +74,11 @@ impl World {
         self.min_velocity = self.vehicles.iter().map(|v| v.get_velocity(&self.vehicles)).fold(f64::INFINITY, f64::min);
         //println!("Vehicles passed: {}", self.vehicle_passed);
         self.vehicles.retain(|v| !v.is_finished());
+    }
+
+    pub fn get_total_close_call_count(&self) -> u32 {
+        let total = self.vehicles.iter().map(|v| v.close_call_count).sum();
+        total
     }
 
     pub fn min_vehicles_time(&self) -> String {
