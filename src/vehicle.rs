@@ -168,7 +168,7 @@ impl Vehicle {
         if self.is_collision(next_x, next_y, vehicles) {
             if !self.is_in_collision { // Increment only if not already in collision
                 self.close_call_count += 1;
-                println!("Close call! {} at ({}, {})", self.close_call_count, self.x, self.y);
+                //println!("Close call! {} at ({}, {})", self.close_call_count, self.x, self.y);
                 self.is_in_collision = true; // Set collision state to true
             }
             //self.border_color = sdl2::pixels::Color::RGB(255, 0, 0);
@@ -234,7 +234,6 @@ impl Vehicle {
         if self.lane != Lane::Left || self.direction != 0 {
             return;
         }
-        print!("Vehicle direction at ({}, {}) ", self.x, self.y);
         if (self.x - target_x).abs() < 5.0 && (self.y - target_y).abs() < 5.0 {
             self.angle = 0.0;
         }
@@ -285,7 +284,7 @@ impl Vehicle {
     pub fn get_velocity(&self, _vehicles: &[Vehicle]) -> f64 {
         let slow_down_factor = 0.3;
         let approach_buffer = 50.0;
-        let rate = rand::thread_rng().gen_range(1.55..=2.95);
+        let rate = rand::thread_rng().gen_range(1.55..=3.95);
         let should_slow_down = match self.direction {
             2 => self.x <= 304.0 + approach_buffer && self.x > 304.0,
             3 => self.x >= 502.0 - approach_buffer && self.x < 502.0,
@@ -294,7 +293,7 @@ impl Vehicle {
             _ => false,
         };
         let base_speed = if self.is_in_intersection() {
-            VEHICLE_SPEED * rand::thread_rng().gen_range(1.55..=2.45)
+            VEHICLE_SPEED * rand::thread_rng().gen_range(1.55..=2.55)
         } else {
             VEHICLE_SPEED * rate
         };
@@ -313,46 +312,24 @@ impl Vehicle {
             return false;
         }
 
-        // Check for count vehicles in the intersection.
+        // First count vehicles in intersection
         let vehicles_in_intersection = vehicles.iter()
-            .filter(|v| {
-                v.is_in_intersection()
-            }).count();
-        for _other in vehicles {
-            //println!("Vehicles in intersection: {}", vehicles_in_intersection);
-            //println!("Checking for blocking positions...");
-            if vehicles_in_intersection >= 1 {
-                if !self.is_in_intersection() {
-                    //println!("Vehicles in intersection: {}", vehicles_in_intersection);
-                    if next_x == WEST_STOP_POS && self.direction == 3 {
-                        println!("Blocking position at West Stop Position");
-                        return false;
-                    } else if next_x == EAST_STOP_POS && self.direction == 2 {
-                        println!("Blocking position at East Stop Position");
-                        return false;
-                    } else if next_y == SOUTH_STOP_POS && self.direction == 0 {
-                        println!("Blocking position at South Stop Position");
-                        return false;
-                    } else if next_y == NORTH_STOP_POS && self.direction == 1 {
-                        println!("Blocking position at North Stop Position");
-                        return false;
-                    }
+            .filter(|v| v.is_in_intersection())
+            .count();
+
+        for other in vehicles {
+            if vehicles_in_intersection >= 3 && !self.is_in_intersection() {
+                if next_x == WEST_STOP_POS && other.direction == 3 {
+                    return false;
+                } else if next_x == EAST_STOP_POS && other.direction == 2 {
+                    return false;
+                } else if next_y == SOUTH_STOP_POS && other.direction == 0 {
+                    return false;
+                } else if next_y == NORTH_STOP_POS && other.direction == 1 {
+                    return false;
                 }
             }
         }
-        // Check for vehicles that are blocking stop positions (e.g., positions near the intersection).
-        // let threshold = 1.0;
-        // for _other in vehicles {
-        //     if (next_x - WEST_STOP_POS).abs() < threshold && self.direction == 3 {
-        //         return false;
-        //     } else if (next_x - EAST_STOP_POS).abs() < threshold && self.direction == 2 {
-        //         return false;
-        //     } else if (next_y - SOUTH_STOP_POS).abs() < threshold && self.direction == 0 {
-        //         return false;
-        //     } else if (next_y - NORTH_STOP_POS).abs() < threshold && self.direction == 1 {
-        //         return false;
-        //     }
-        // }
         true
     }
 
