@@ -443,41 +443,6 @@ impl Vehicle {
         Ok(())
     }
 
-    // /// Draws additional visual debugging information such as safety boundaries.
-    // pub fn draw_borders(&self, canvas: &mut Canvas<Window>) -> Result<(), String> {
-    //     // Draw safety distance boundary
-    //     canvas.set_draw_color(sdl2::pixels::Color::RGBA(255, 165, 0, 100));
-    //     let safety_rect = Rect::new(
-    //         (self.x - SAFETY_DISTANCE) as i32,
-    //         (self.y - SAFETY_DISTANCE) as i32,
-    //         (SAFETY_DISTANCE * 2.0) as u32,
-    //         (SAFETY_DISTANCE * 2.0) as u32,
-    //     );
-    //     canvas.draw_rect(safety_rect)?;
-
-    //     // Draw stopping distance boundary
-    //     canvas.set_draw_color(sdl2::pixels::Color::RGBA(255, 0, 0, 100));
-    //     let stopping_rect = Rect::new(
-    //         (self.x - STOPPING_DISTANCE) as i32,
-    //         (self.y - STOPPING_DISTANCE) as i32,
-    //         (STOPPING_DISTANCE * 2.0) as u32,
-    //         (STOPPING_DISTANCE * 2.0) as u32,
-    //     );
-    //     canvas.draw_rect(stopping_rect)?;
-
-    //     // Draw actual vehicle collision boundary
-    //     canvas.set_draw_color(sdl2::pixels::Color::RGBA(0, 255, 0, 255));
-    //     let vehicle_rect = Rect::new(
-    //         self.x as i32 - VEHICLE_SIZE as i32,
-    //         self.y as i32 - VEHICLE_SIZE as i32,
-    //         VEHICLE_SIZE * 2,
-    //         VEHICLE_SIZE * 2,
-    //     );
-    //     canvas.draw_rect(vehicle_rect)?;
-
-    //     Ok(())
-    // }
-
     /// Draws the direction arrow for the vehicle.
     pub fn draw_direction_arrow(&self, canvas: &mut Canvas<Window>) -> Result<(), String> {
         let arrow_length = SAFETY_DISTANCE;
@@ -512,14 +477,4 @@ impl Vehicle {
 
         Ok(())
     }
-
-    // /// Update the vehicle's glow effect by lightening its color.
-    // pub fn update_glow(&mut self) -> Result<(), String> {
-    //     self.color = sdl2::pixels::Color::RGB(
-    //         (self.color.r as u16 + 40).min(255) as u8,
-    //         (self.color.g as u16 + 40).min(255) as u8,
-    //         (self.color.b as u16 + 40).min(255) as u8,
-    //     );
-    //     Ok(())
-    // }
 }
