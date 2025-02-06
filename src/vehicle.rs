@@ -147,7 +147,7 @@ impl Vehicle {
     pub fn update(&mut self, vehicles: &[Vehicle]) {
         // Use the new intersection priority algorithm.
         if !self.check_intersection_priority(vehicles) {
-            self.border_color = sdl2::pixels::Color::RGB(255, 165, 0);
+            //self.border_color = sdl2::pixels::Color::RGB(255, 165, 0);
             return;
         }
 
@@ -171,7 +171,7 @@ impl Vehicle {
                 println!("Close call! {} at ({}, {})", self.close_call_count, self.x, self.y);
                 self.is_in_collision = true; // Set collision state to true
             }
-            self.border_color = sdl2::pixels::Color::RGB(255, 0, 0);
+            //self.border_color = sdl2::pixels::Color::RGB(255, 0, 0);
         } else {
             self.is_in_collision = false; // Reset collision state to false
         }
@@ -430,7 +430,7 @@ impl Vehicle {
         let rect = Rect::new(
             self.x as i32 - VEHICLE_SIZE as i32 / 2,
             self.y as i32 - VEHICLE_SIZE as i32 / 2,
-            VEHICLE_SIZE,
+            VEHICLE_SIZE * 2,
             VEHICLE_SIZE,
         );
 
@@ -448,8 +448,8 @@ impl Vehicle {
         // canvas.set_draw_color(self.color);
         // let _ = canvas.fill_rect(rect);
 
-        canvas.set_draw_color(self.border_color);
-        canvas.draw_rect(rect)?;
+        // canvas.set_draw_color(self.border_color);
+        // canvas.draw_rect(rect)?;
 
         //self.draw_direction_arrow(canvas)?;
         Ok(())
