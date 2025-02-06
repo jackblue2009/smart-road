@@ -134,7 +134,7 @@ impl World {
             ),
             // From South
             0 => (
-                405 + lane_width as i32 * (self.vehicles.len() % 3) as i32,
+                420 + lane_width as i32 * (self.vehicles.len() % 3) as i32,
                 600,
                 0,
             ),

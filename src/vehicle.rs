@@ -234,6 +234,7 @@ impl Vehicle {
         if self.lane != Lane::Left || self.direction != 0 {
             return;
         }
+        print!("Vehicle direction at ({}, {}) ", self.x, self.y);
         if (self.x - target_x).abs() < 5.0 && (self.y - target_y).abs() < 5.0 {
             self.angle = 0.0;
         }
@@ -430,7 +431,7 @@ impl Vehicle {
         let rect = Rect::new(
             self.x as i32 - VEHICLE_SIZE as i32 / 2,
             self.y as i32 - VEHICLE_SIZE as i32 / 2,
-            VEHICLE_SIZE * 2,
+            VEHICLE_SIZE,
             VEHICLE_SIZE,
         );
 
