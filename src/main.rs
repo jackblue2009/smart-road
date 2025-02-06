@@ -11,7 +11,7 @@ mod vehicle;
 mod world;
 
 pub use world::World;
-pub use smart_road::draw_panel;
+pub use smart_road::{draw_panel, draw_hud};
 
 fn main() -> Result<(), String> {
     let sdl_context = sdl2::init()?;
@@ -86,6 +86,7 @@ fn main() -> Result<(), String> {
         //world.auto_spawn();
         world.update();
         world.draw(&mut canvas)?;
+        draw_hud(&mut canvas, &ttf_context);
 
         canvas.present();
         ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));

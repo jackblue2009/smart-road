@@ -4,6 +4,24 @@ use sdl2::video::Window;
 use sdl2::render::BlendMode;
 use sdl2::ttf::Sdl2TtfContext; // Import Sdl2TtfContext
 
+pub fn draw_hud(canvas: &mut Canvas<Window>, ttf_context: &Sdl2TtfContext) {
+    let regular_color = sdl2::pixels::Color::RGB(255, 255, 255);
+    let regular_font = ttf_context.load_font("./src/assets/fonts/Roboto-Regular.ttf", 24).unwrap();
+    let regular_text = "Press ESC to exit";
+
+    let texture_creator = canvas.texture_creator();
+
+    let regular_surface = regular_font
+        .render(&regular_text)
+        .blended(regular_color)
+        .unwrap();
+    let regular_texture = texture_creator
+        .create_texture_from_surface(&regular_surface)
+        .unwrap();
+    let regular_rect = Rect::new(0, 0, 200, 30);
+    canvas.copy(&regular_texture, None, Some(regular_rect)).unwrap();
+}
+
 pub fn draw_panel(canvas: &mut Canvas<Window>,
     passed_vehicles: u32,
     max_velocity: f64,

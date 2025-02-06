@@ -77,7 +77,10 @@ impl World {
     }
 
     pub fn get_total_close_call_count(&self) -> u32 {
-        let total = self.vehicles.iter().map(|v| v.close_call_count).sum();
+        let mut total = 0;
+        for vehicle in &self.vehicles {
+            total += vehicle.close_call_count;
+        }
         total
     }
 
