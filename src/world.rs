@@ -243,7 +243,7 @@ impl World {
         self.last_vehicle_spawn_time = Instant::now();
     }
 
-    pub fn draw(&self, canvas: &mut Canvas<Window>) -> Result<(), String> {
+    pub fn draw(&self, canvas: &mut Canvas<Window>, texture: &sdl2::render::Texture) -> Result<(), String> {
         // Draw roads
         canvas.set_draw_color(sdl2::pixels::Color::RGB(100, 100, 100));
         let lane_width = ROAD_WIDTH / 6;
@@ -324,7 +324,7 @@ impl World {
 
         // Draw vehicles
         for vehicle in &self.vehicles {
-            vehicle.draw(canvas)?;
+            vehicle.draw(canvas, texture)?;
         }
 
         Ok(())

@@ -1,6 +1,9 @@
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 use sdl2::pixels::Color;
+use sdl2::surface::Surface;
+use sdl2::image::LoadSurface;
+use sdl2::image::LoadTexture;
 use std::time::Duration;
 #[allow(unused_imports)]
 use std::time::Instant;
@@ -24,6 +27,24 @@ fn main() -> Result<(), String> {
         .map_err(|e| e.to_string())?;
 
     let mut canvas = window.into_canvas().build().map_err(|e| e.to_string())?;
+
+    // Load the sprite sheet into a Surface.
+    let mut surface = Surface::from_file("./src/assets/sprite.png")
+        .map_err(|e| e.to_string())?;
+    // Set the color key so that white becomes transparent.
+    // surface
+    //     .set_color_key(true, Color::RGB(255, 255, 255))
+    //     .map_err(|e| e.to_string())?;
+
+    // Create a texture creator from the canvas and load the sprite sheet.
+    let texture_creator = canvas.texture_creator();
+    let sprite_texture = texture_creator
+        .load_texture("./src/assets/sprite.png")
+        .map_err(|e| e.to_string())?;
+    // let sprite_texture = texture_creator
+    //     .create_texture_from_surface(&surface)
+    //     .map_err(|e| e.to_string())?;
+
     let mut event_pump = sdl_context.event_pump()?;
 
     let sdl_context = sdl2::init().unwrap();
@@ -85,7 +106,7 @@ fn main() -> Result<(), String> {
 
         //world.auto_spawn();
         world.update();
-        world.draw(&mut canvas)?;
+        world.draw(&mut canvas, &sprite_texture)?;
         draw_hud(&mut canvas, &ttf_context);
 
         canvas.present();

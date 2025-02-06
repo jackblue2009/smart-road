@@ -426,20 +426,58 @@ impl Vehicle {
     ///
     /// Draws the vehicle rectangle with its color, border, and a direction arrow indicating
     /// the current velocity vector.
-    pub fn draw(&self, canvas: &mut Canvas<Window>) -> Result<(), String> {
-        let rect = Rect::new(
-            self.x as i32 - VEHICLE_SIZE as i32 / 2,
-            self.y as i32 - VEHICLE_SIZE as i32 / 2,
+    pub fn draw(&self, canvas: &mut Canvas<Window>, texture: &sdl2::render::Texture) -> Result<(), String> {
+        // Query texture dimensions and calculate sprite dimensions from a 14x3 grid.
+        let query = texture.query();
+        let sprite_width = query.width / 14;
+        let sprite_height = query.height / 3;
+
+        // Build an array (vector) of all sprite source rectangles.
+        let mut sprites = Vec::with_capacity(14 * 3);
+        for row in 0..3 {
+            for col in 0..14 {
+                sprites.push(sdl2::rect::Rect::new(
+                    (col * sprite_width) as i32,
+                    (row * sprite_height) as i32,
+                    sprite_width,
+                    sprite_height,
+                ));
+            }
+        }
+
+        // Select the first sprite by default.
+        let src_rect = sprites.get(0).ok_or("Failed to get first sprite")?;
+        let dest_rect = sdl2::rect::Rect::new(
+            self.x as i32 - (VEHICLE_SIZE as i32 / 2),
+            self.y as i32 - (VEHICLE_SIZE as i32 / 2),
             VEHICLE_SIZE,
             VEHICLE_SIZE,
         );
-        canvas.set_draw_color(self.color);
-        let _ = canvas.fill_rect(rect);
 
-        canvas.set_draw_color(self.border_color);
-        canvas.draw_rect(rect)?;
+        canvas.copy_ex(
+            texture,
+            Some(*src_rect),
+            Some(dest_rect),
+            self.angle,
+            Some(sdl2::rect::Point::new((VEHICLE_SIZE / 2) as i32, (VEHICLE_SIZE / 2) as i32)),
+            false,
+            false
+        )?;
 
-        self.draw_direction_arrow(canvas)?;
+        // let rect = Rect::new(
+        //     self.x as i32 - VEHICLE_SIZE as i32 / 2,
+        //     self.y as i32 - VEHICLE_SIZE as i32 / 2,
+        //     VEHICLE_SIZE,
+        //     VEHICLE_SIZE,
+        // );
+
+        // canvas.set_draw_color(self.color);
+        // let _ = canvas.fill_rect(rect);
+
+        // canvas.set_draw_color(self.border_color);
+        // canvas.draw_rect(rect)?;
+
+        // self.draw_direction_arrow(canvas)?;
         Ok(())
     }
 
