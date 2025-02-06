@@ -15,3 +15,15 @@ Run below command to run the game:
 ```
 cargo run
 ```
+
+## Controls
+
+- Arrow keys to spawn cars
+- R to spawn random cars
+- ESC to exit
+
+## Authors
+
+- [Abdulrahman Idrees](https://github.com/akhaled01)
+- [Fares Alashkar](https://github.com/Exortix)
+- [Abdulrahman Bucheeri](https://github.com/jackblue2009)
