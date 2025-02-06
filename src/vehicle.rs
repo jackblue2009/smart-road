@@ -1,14 +1,14 @@
-use std::sync::atomic::{AtomicU32, Ordering};
+//use std::sync::atomic::{AtomicU32, Ordering};
 use std::f64::consts::PI;
 use rand::Rng;
 
-use crate::road::{ROAD_HEIGHT, ROAD_WIDTH};
+use crate::road::{ROAD_HEIGHT};
 use sdl2::rect::Point;
 use sdl2::rect::Rect;
 use sdl2::render::Canvas;
 use sdl2::video::Window;
 
-static VEHICLE_ID_COUNTER: AtomicU32 = AtomicU32::new(1);
+//static VEHICLE_ID_COUNTER: AtomicU32 = AtomicU32::new(1);
 
 const VEHICLE_SIZE: u32 = 30;
 const VEHICLE_SPEED: f64 = 2.0;
@@ -29,7 +29,7 @@ pub enum Lane {
 
 #[derive(Clone)]
 pub struct Vehicle {
-    pub id: u32,
+    // pub id: u32,
     pub x: f64,
     pub y: f64,
     pub angle: f64,
@@ -39,6 +39,7 @@ pub struct Vehicle {
     pub border_color: sdl2::pixels::Color,
     /// When a vehicle first enters the intersection, we record the time.
     pub intersection_entry_time: Option<std::time::Instant>,
+    pub spawn_time: std::time::Instant,
 }
 
 impl Vehicle {
@@ -71,7 +72,7 @@ impl Vehicle {
         };
 
         Vehicle {
-            id: VEHICLE_ID_COUNTER.fetch_add(1, Ordering::SeqCst),
+            // id: VEHICLE_ID_COUNTER.fetch_add(1, Ordering::SeqCst),
             x: x as f64,
             y: y as f64,
             angle: init_angle,
@@ -80,6 +81,7 @@ impl Vehicle {
             color,
             border_color: sdl2::pixels::Color::RGB(0, 255, 0),
             intersection_entry_time: None,
+            spawn_time: std::time::Instant::now(),
         }
     }
 
@@ -171,6 +173,7 @@ impl Vehicle {
 
         // When a vehicle enters the intersection, record its entry time once.
         if self.is_in_intersection() {
+            //println!("Vehicle {} entered intersection at {:?}", self.id, std::time::Instant::now());
             if self.intersection_entry_time.is_none() {
                 self.intersection_entry_time = Some(std::time::Instant::now());
             }
@@ -267,7 +270,7 @@ impl Vehicle {
     ///
     /// When approaching an intersection, the vehicle slows down (30% speed); within the intersection,
     /// a randomized speed multiplier is applied.
-    pub fn get_velocity(&mut self, vehicles: &[Vehicle]) -> f64 {
+    pub fn get_velocity(&self, _vehicles: &[Vehicle]) -> f64 {
         let slow_down_factor = 0.3;
         let approach_buffer = 50.0;
         let rate = rand::thread_rng().gen_range(0.55..=1.95);
@@ -303,12 +306,11 @@ impl Vehicle {
             .filter(|v| {
                 v.is_in_intersection()
             }).count();
-        
-        for other in vehicles {
-            println!("Vehicles in intersection: {}", vehicles_in_intersection);
-            println!("Checking for blocking positions...");
+        for _other in vehicles {
+            //println!("Vehicles in intersection: {}", vehicles_in_intersection);
+            //println!("Checking for blocking positions...");
             if vehicles_in_intersection >= 3 && !self.is_in_intersection() {
-                println!("Vehicles in intersection: {}", vehicles_in_intersection);
+                //println!("Vehicles in intersection: {}", vehicles_in_intersection);
                 if next_x == WEST_STOP_POS && self.direction == 3 {
                     println!("Blocking position at West Stop Position");
                     return false;
@@ -412,40 +414,40 @@ impl Vehicle {
         Ok(())
     }
 
-    /// Draws additional visual debugging information such as safety boundaries.
-    pub fn draw_borders(&self, canvas: &mut Canvas<Window>) -> Result<(), String> {
-        // Draw safety distance boundary
-        canvas.set_draw_color(sdl2::pixels::Color::RGBA(255, 165, 0, 100));
-        let safety_rect = Rect::new(
-            (self.x - SAFETY_DISTANCE) as i32,
-            (self.y - SAFETY_DISTANCE) as i32,
-            (SAFETY_DISTANCE * 2.0) as u32,
-            (SAFETY_DISTANCE * 2.0) as u32,
-        );
-        canvas.draw_rect(safety_rect)?;
+    // /// Draws additional visual debugging information such as safety boundaries.
+    // pub fn draw_borders(&self, canvas: &mut Canvas<Window>) -> Result<(), String> {
+    //     // Draw safety distance boundary
+    //     canvas.set_draw_color(sdl2::pixels::Color::RGBA(255, 165, 0, 100));
+    //     let safety_rect = Rect::new(
+    //         (self.x - SAFETY_DISTANCE) as i32,
+    //         (self.y - SAFETY_DISTANCE) as i32,
+    //         (SAFETY_DISTANCE * 2.0) as u32,
+    //         (SAFETY_DISTANCE * 2.0) as u32,
+    //     );
+    //     canvas.draw_rect(safety_rect)?;
 
-        // Draw stopping distance boundary
-        canvas.set_draw_color(sdl2::pixels::Color::RGBA(255, 0, 0, 100));
-        let stopping_rect = Rect::new(
-            (self.x - STOPPING_DISTANCE) as i32,
-            (self.y - STOPPING_DISTANCE) as i32,
-            (STOPPING_DISTANCE * 2.0) as u32,
-            (STOPPING_DISTANCE * 2.0) as u32,
-        );
-        canvas.draw_rect(stopping_rect)?;
+    //     // Draw stopping distance boundary
+    //     canvas.set_draw_color(sdl2::pixels::Color::RGBA(255, 0, 0, 100));
+    //     let stopping_rect = Rect::new(
+    //         (self.x - STOPPING_DISTANCE) as i32,
+    //         (self.y - STOPPING_DISTANCE) as i32,
+    //         (STOPPING_DISTANCE * 2.0) as u32,
+    //         (STOPPING_DISTANCE * 2.0) as u32,
+    //     );
+    //     canvas.draw_rect(stopping_rect)?;
 
-        // Draw actual vehicle collision boundary
-        canvas.set_draw_color(sdl2::pixels::Color::RGBA(0, 255, 0, 255));
-        let vehicle_rect = Rect::new(
-            self.x as i32 - VEHICLE_SIZE as i32,
-            self.y as i32 - VEHICLE_SIZE as i32,
-            VEHICLE_SIZE * 2,
-            VEHICLE_SIZE * 2,
-        );
-        canvas.draw_rect(vehicle_rect)?;
+    //     // Draw actual vehicle collision boundary
+    //     canvas.set_draw_color(sdl2::pixels::Color::RGBA(0, 255, 0, 255));
+    //     let vehicle_rect = Rect::new(
+    //         self.x as i32 - VEHICLE_SIZE as i32,
+    //         self.y as i32 - VEHICLE_SIZE as i32,
+    //         VEHICLE_SIZE * 2,
+    //         VEHICLE_SIZE * 2,
+    //     );
+    //     canvas.draw_rect(vehicle_rect)?;
 
-        Ok(())
-    }
+    //     Ok(())
+    // }
 
     /// Draws the direction arrow for the vehicle.
     pub fn draw_direction_arrow(&self, canvas: &mut Canvas<Window>) -> Result<(), String> {
@@ -482,13 +484,13 @@ impl Vehicle {
         Ok(())
     }
 
-    /// Update the vehicle's glow effect by lightening its color.
-    pub fn update_glow(&mut self) -> Result<(), String> {
-        self.color = sdl2::pixels::Color::RGB(
-            (self.color.r as u16 + 40).min(255) as u8,
-            (self.color.g as u16 + 40).min(255) as u8,
-            (self.color.b as u16 + 40).min(255) as u8,
-        );
-        Ok(())
-    }
+    // /// Update the vehicle's glow effect by lightening its color.
+    // pub fn update_glow(&mut self) -> Result<(), String> {
+    //     self.color = sdl2::pixels::Color::RGB(
+    //         (self.color.r as u16 + 40).min(255) as u8,
+    //         (self.color.g as u16 + 40).min(255) as u8,
+    //         (self.color.b as u16 + 40).min(255) as u8,
+    //     );
+    //     Ok(())
+    // }
 }

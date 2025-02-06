@@ -41,7 +41,12 @@ fn main() -> Result<(), String> {
                     ..
                 } => {
                     // Pass the ttf_context to draw_panel.
-                    draw_panel(&mut canvas, world.get_vehicles_passed(), &ttf_context);
+                    draw_panel(&mut canvas, world.get_vehicles_passed(),
+                    world.get_max_velocity(),
+                    world.get_min_velocity(),
+                    world.max_vehicles_time(),
+                    world.min_vehicles_time(),
+                    &ttf_context);
                     // Wait for user input to close
                     loop {
                         for event in event_pump.poll_iter() {

@@ -4,70 +4,28 @@ use rand::Rng;
 use sdl2::rect::Rect;
 use sdl2::render::Canvas;
 use sdl2::video::Window;
-use sdl2::AudioSubsystem;
-use sdl2::audio::{AudioCallback, AudioDevice, AudioSpecDesired};
 use sdl2::mixer::{InitFlag, AUDIO_S16LSB, DEFAULT_CHANNELS};
 // use std::f64::consts::PI;
 use std::time::{Duration, Instant};
 
 use crate::vehicle::Lane;
 
-// Define allowed routes for each spawn direction
-// #[derive(Debug, Clone, Copy)]
-// struct VehicleRouting {
-//     spawn_x: i32,
-//     spawn_y: i32,
-//     spawn_angle: f64,
-//     spawn_direction: u8,
-//     allowed_routes: &'static [u8], // 0: straight, 1: right, 2: left
-// }
-
-struct VehicleSpawnSound {
-    phase_inc: f32,
-    phase: f32,
-    volume: f32,
-}
-
-impl AudioCallback for VehicleSpawnSound {
-    type Channel = f32;
-
-    fn callback(&mut self, out: &mut [f32]) {
-        for x in out.iter_mut() {
-            *x = (self.phase * 2.0 * std::f32::consts::PI).sin() * self.volume;
-            self.phase = (self.phase + self.phase_inc) % 1.0;
-        }
-    }
-}
-
 pub struct World {
     vehicles: Vec<Vehicle>,
     spawn_sound: sdl2::mixer::Chunk,
-    // audio_subsystem: AudioSubsystem,
-    // device: AudioDevice<VehicleSpawnSound>,
     last_vehicle_spawn_time: Instant,
     vehicle_spawn_cooldown: Duration,
     max_vehicles: usize,
     vehicle_passed: u32,
+    max_velocity: f64,
+    min_velocity: f64,
+    max_crossing_time: Duration,
+    min_crossing_time: Duration,
 }
 
 #[allow(dead_code)]
 impl World {
-    pub fn new(sdl_context: &sdl2::Sdl) -> Self {
-        // let audio_subsystem = sdl_context.audio().unwrap();
-        // let audio_spec = AudioSpecDesired {
-        //     freq: Some(44100),
-        //     channels: Some(1),
-        //     samples: None,
-        // };
-
-        // let device = audio_subsystem.open_playback(None, &audio_spec, |spec| {
-        //     VehicleSpawnSound {
-        //         phase_inc: 440.0 / spec.freq as f32,
-        //         phase: 0.0,
-        //         volume: 0.25,
-        //     }
-        // }).unwrap();
-
+    pub fn new(_sdl_context: &sdl2::Sdl) -> Self {
         sdl2::mixer::open_audio(44100, AUDIO_S16LSB, DEFAULT_CHANNELS, 1024).unwrap();
         let _mixer_context = sdl2::mixer::init(InitFlag::MP3).unwrap();
         sdl2::mixer::allocate_channels(8);
@@ -77,12 +35,14 @@ impl World {
         World {
             vehicles: Vec::new(),
             spawn_sound,
-            // audio_subsystem,
-            // device,
             last_vehicle_spawn_time: Instant::now(),
             vehicle_spawn_cooldown: Duration::from_millis(750),
             max_vehicles: 12,
             vehicle_passed: 0,
+            max_velocity: 0.0,
+            min_velocity: 0.0,
+            max_crossing_time: Duration::from_secs(0),
+            min_crossing_time: Duration::from_secs(0),
         }
     }
 
@@ -96,10 +56,44 @@ impl World {
             }
         }
 
+        for vehicle in &self.vehicles {
+            if vehicle.is_finished() {
+                let crossing_time = vehicle.spawn_time.elapsed();
+                self.max_crossing_time = self.max_crossing_time.max(crossing_time);
+                self.min_crossing_time = if self.min_crossing_time.as_nanos() == 0 {
+                    crossing_time
+                } else {
+                    self.min_crossing_time.min(crossing_time)
+                }
+            }
+        }
+
         let finished_count = self.vehicles.iter().filter(|v| v.is_finished()).count();
         self.vehicle_passed += finished_count as u32;
+        self.max_velocity = self.vehicles.iter().map(|v| v.get_velocity(&self.vehicles)).fold(0.0, f64::max);
+        self.min_velocity = self.vehicles.iter().map(|v| v.get_velocity(&self.vehicles)).fold(f64::INFINITY, f64::min);
         //println!("Vehicles passed: {}", self.vehicle_passed);
         self.vehicles.retain(|v| !v.is_finished());
+    }
+
+    pub fn min_vehicles_time(&self) -> String {
+        let secs = self.min_crossing_time.as_secs();
+        let millis = self.min_crossing_time.subsec_millis();
+        format!("{}.{:02}", secs, millis)
+    }
+
+    pub fn max_vehicles_time(&self) -> String {
+        let secs = self.max_crossing_time.as_secs();
+        let millis = self.max_crossing_time.subsec_millis();
+        format!("{}.{:02}", secs, millis)
+    }
+
+    pub fn get_max_velocity(&mut self) -> f64 {
+        self.max_velocity.round()
+    }
+
+    pub fn get_min_velocity(&mut self) -> f64 {
+        self.min_velocity.round()
     }
 
     pub fn get_vehicles_passed(&self) -> u32 {
