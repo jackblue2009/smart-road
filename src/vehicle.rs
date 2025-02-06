@@ -432,39 +432,4 @@ impl Vehicle {
         //self.draw_direction_arrow(canvas)?;
         Ok(())
     }
-
-    /// Draws the direction arrow for the vehicle.
-    pub fn draw_direction_arrow(&self, canvas: &mut Canvas<Window>) -> Result<(), String> {
-        let arrow_length = SAFETY_DISTANCE;
-        let rad = self.angle * PI / 180.0;
-        let tip_x = self.x + arrow_length * rad.cos();
-        let tip_y = self.y + arrow_length * rad.sin();
-
-        canvas.set_draw_color(sdl2::pixels::Color::RGBA(255, 255, 255, 255));
-        canvas.draw_line(
-            Point::new(self.x as i32, self.y as i32),
-            Point::new(tip_x as i32, tip_y as i32),
-        )?;
-
-        // Calculate arrow head
-        let head_angle: f32 = 30.0;
-        let head_length = 15.0;
-        let left_angle = rad + head_angle.to_radians() as f64;
-        let right_angle = rad - head_angle.to_radians() as f64;
-        let left_x = tip_x - head_length * left_angle.cos();
-        let left_y = tip_y - head_length * left_angle.sin();
-        let right_x = tip_x - head_length * right_angle.cos();
-        let right_y = tip_y - head_length * right_angle.sin();
-
-        canvas.draw_line(
-            Point::new(tip_x as i32, tip_y as i32),
-            Point::new(left_x as i32, left_y as i32),
-        )?;
-        canvas.draw_line(
-            Point::new(tip_x as i32, tip_y as i32),
-            Point::new(right_x as i32, right_y as i32),
-        )?;
-
-        Ok(())
-    }
 }
