@@ -285,7 +285,7 @@ impl Vehicle {
     pub fn get_velocity(&self, _vehicles: &[Vehicle]) -> f64 {
         let slow_down_factor = 0.3;
         let approach_buffer = 50.0;
-        let rate = rand::thread_rng().gen_range(0.55..=1.95);
+        let rate = rand::thread_rng().gen_range(1.55..=2.95);
         let should_slow_down = match self.direction {
             2 => self.x <= 304.0 + approach_buffer && self.x > 304.0,
             3 => self.x >= 502.0 - approach_buffer && self.x < 502.0,
@@ -294,7 +294,7 @@ impl Vehicle {
             _ => false,
         };
         let base_speed = if self.is_in_intersection() {
-            VEHICLE_SPEED * rand::thread_rng().gen_range(1.55..=4.45)
+            VEHICLE_SPEED * rand::thread_rng().gen_range(1.55..=2.45)
         } else {
             VEHICLE_SPEED * rate
         };
@@ -318,11 +318,11 @@ impl Vehicle {
             .filter(|v| {
                 v.is_in_intersection()
             }).count();
-        for other in vehicles {
+        for _other in vehicles {
             //println!("Vehicles in intersection: {}", vehicles_in_intersection);
             //println!("Checking for blocking positions...");
-            if vehicles_in_intersection >= 3 {
-                if other.is_in_intersection() && !self.is_in_intersection() {
+            if vehicles_in_intersection >= 1 {
+                if !self.is_in_intersection() {
                     //println!("Vehicles in intersection: {}", vehicles_in_intersection);
                     if next_x == WEST_STOP_POS && self.direction == 3 {
                         println!("Blocking position at West Stop Position");

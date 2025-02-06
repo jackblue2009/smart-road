@@ -36,7 +36,7 @@ impl World {
             vehicles: Vec::new(),
             spawn_sound,
             last_vehicle_spawn_time: Instant::now(),
-            vehicle_spawn_cooldown: Duration::from_millis(650),
+            vehicle_spawn_cooldown: Duration::from_millis(700),
             max_vehicles: 12,
             vehicle_passed: 0,
             max_velocity: 0.0,
