@@ -360,7 +360,7 @@ impl Vehicle {
             if !same_direction && distance < SAFETY_DISTANCE {
                 if !self.is_in_collision { // Increment only if not already in collision
                     self.close_call_count += 1;
-                    println!("Close call! {} at ({}, {})", self.close_call_count, self.x, self.y);
+                    //println!("Close call! {} at ({}, {})", self.close_call_count, self.x, self.y);
                     self.is_in_collision = true; // Set collision state to true
                 }
             }
