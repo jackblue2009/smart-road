@@ -36,8 +36,8 @@ impl World {
             vehicles: Vec::new(),
             spawn_sound,
             last_vehicle_spawn_time: Instant::now(),
-            vehicle_spawn_cooldown: Duration::from_millis(1100),
-            max_vehicles: 12,
+            vehicle_spawn_cooldown: Duration::from_millis(950),
+            max_vehicles: 18,
             vehicle_passed: 0,
             max_velocity: 0.0,
             min_velocity: 0.0,
@@ -64,14 +64,35 @@ impl World {
                     crossing_time
                 } else {
                     self.min_crossing_time.min(crossing_time)
+                };
+                let vel = vehicle.get_velocity(&self.vehicles);
+                self.max_velocity = self.max_velocity.max(vel);
+                if self.min_velocity == 0.0 || self.min_velocity == f64::INFINITY {
+                    self.min_velocity = vel;
+                } else {
+                    self.min_velocity = self.min_velocity.min(vel);
                 }
+            }
+        }
+
+        if !self.vehicles.is_empty() {
+            let current_max = self.vehicles.iter()
+                .map(|v| v.get_velocity(&self.vehicles))
+                .fold(0.0, f64::max);
+            self.max_velocity = self.max_velocity.max(current_max);
+    
+            let current_min = self.vehicles.iter()
+                .map(|v| v.get_velocity(&self.vehicles))
+                .fold(f64::INFINITY, f64::min);
+            if current_min != f64::INFINITY {
+                self.min_velocity = self.min_velocity.min(current_min);
             }
         }
 
         let finished_count = self.vehicles.iter().filter(|v| v.is_finished()).count();
         self.vehicle_passed += finished_count as u32;
-        self.max_velocity = self.vehicles.iter().map(|v| v.get_velocity(&self.vehicles)).fold(0.0, f64::max);
-        self.min_velocity = self.vehicles.iter().map(|v| v.get_velocity(&self.vehicles)).fold(f64::INFINITY, f64::min);
+        // self.max_velocity = self.vehicles.iter().map(|v| v.get_velocity(&self.vehicles)).fold(0.0, f64::max);
+        // self.min_velocity = self.vehicles.iter().map(|v| v.get_velocity(&self.vehicles)).fold(f64::INFINITY, f64::min);
         //println!("Vehicles passed: {}", self.vehicle_passed);
         self.vehicles.retain(|v| !v.is_finished());
     }
