@@ -52,6 +52,7 @@ fn main() -> Result<(), String> {
     let ttf_context = sdl2::ttf::init().map_err(|e| e.to_string())?;
 
     let mut world = World::new(&sdl_context);
+    let mut auto_spawning = false;
 
     'running: loop {
         for event in event_pump.poll_iter() {
@@ -89,16 +90,22 @@ fn main() -> Result<(), String> {
                     ..
                 } => {
                     match keycode {
-                        Keycode::Down => world.spawn_dir(1),
-                        Keycode::Up => world.spawn_dir(0),
-                        Keycode::Right => world.spawn_dir(3),
-                        Keycode::Left => world.spawn_dir(2),
-                        Keycode::R => world.auto_spawn(),
+                        Keycode::R => {
+                            auto_spawning = !auto_spawning;
+                        },
+                        Keycode::Down if !auto_spawning => world.spawn_dir(1),
+                        Keycode::Up if !auto_spawning => world.spawn_dir(0),
+                        Keycode::Right if !auto_spawning => world.spawn_dir(3),
+                        Keycode::Left if !auto_spawning => world.spawn_dir(2),
                         _ => {}
                     }
                 }
                 _ => {}
             }
+        }
+
+        if auto_spawning {
+            world.auto_spawn();
         }
 
         canvas.set_draw_color(Color::RGB(0, 0, 0));
@@ -107,7 +114,7 @@ fn main() -> Result<(), String> {
         //world.auto_spawn();
         world.update();
         world.draw(&mut canvas, &sprite_texture)?;
-        draw_hud(&mut canvas, &ttf_context);
+        draw_hud(&mut canvas, &ttf_context, auto_spawning);
 
         canvas.present();
         ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));

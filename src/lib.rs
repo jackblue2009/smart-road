@@ -4,7 +4,7 @@ use sdl2::video::Window;
 use sdl2::render::BlendMode;
 use sdl2::ttf::Sdl2TtfContext; // Import Sdl2TtfContext
 
-pub fn draw_hud(canvas: &mut Canvas<Window>, ttf_context: &Sdl2TtfContext) {
+pub fn draw_hud(canvas: &mut Canvas<Window>, ttf_context: &Sdl2TtfContext, auto_spawning: bool) {
     let regular_color = sdl2::pixels::Color::RGB(255, 255, 255);
     let regular_font = ttf_context.load_font("./src/assets/fonts/Roboto-Regular.ttf", 24).unwrap();
     let regular_text = "Press ESC to exit";
@@ -20,6 +20,19 @@ pub fn draw_hud(canvas: &mut Canvas<Window>, ttf_context: &Sdl2TtfContext) {
         .unwrap();
     let regular_rect = Rect::new(0, 0, 200, 30);
     canvas.copy(&regular_texture, None, Some(regular_rect)).unwrap();
+
+    // Draw the auto spawning status on the top right.
+    let auto_text = if auto_spawning { "Auto Spawning: ON" } else { "Auto Spawning: OFF" };
+    let auto_surface = regular_font
+        .render(auto_text)
+        .blended(regular_color)
+        .unwrap();
+    let auto_texture = texture_creator
+        .create_texture_from_surface(&auto_surface)
+        .unwrap();
+    // Hardcoded position; x is chosen so that the text appears at the top right (adjust as needed)
+    let auto_rect = Rect::new(600, 0, 200, 30);
+    canvas.copy(&auto_texture, None, Some(auto_rect)).unwrap();
 }
 
 pub fn draw_panel(canvas: &mut Canvas<Window>,
