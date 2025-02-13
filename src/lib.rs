@@ -59,6 +59,16 @@ pub fn draw_panel(canvas: &mut Canvas<Window>,
 
     let texture_creator = canvas.texture_creator();
 
+    let return_text = title_font
+        .render("Press Return to exit")
+        .blended(title_color)
+        .unwrap();
+    let return_texture = texture_creator
+        .create_texture_from_surface(&return_text)
+        .unwrap();
+    let return_rect = Rect::new(200, 110, 200, 40);
+    canvas.copy(&return_texture, None, Some(return_rect)).unwrap();
+
     // Drawing the title text
     let surface = title_font
         .render("Simulation Complete")
